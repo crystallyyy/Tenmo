@@ -41,8 +41,9 @@ public class JdbcAccountDao implements AccountDao{
                 "WHERE user_id = ?;";
 
         SqlRowSet result = jdbcTemplate.queryForRowSet(sql, id);
-        account = mapRowToAccount(result);
-
+        if (result.next()) {
+            account = mapRowToAccount(result);
+        }
         return account;
     }
 
@@ -68,7 +69,8 @@ public class JdbcAccountDao implements AccountDao{
                 throw new DaoException("Data Integrity violation", e);
             }
         } else {
-            System.out.println("Insufficient funds or invalid user ID");
+            //TODO: create exception
+            throw new RuntimeException("Insufficient funds or invalid user ID");
         }
         //will method continue running?
 
@@ -76,9 +78,11 @@ public class JdbcAccountDao implements AccountDao{
                 "WHERE user_id = ?;";
 
         try {
-            //TODO: check 1 row affected, set as int
-            jdbcTemplate.update(sql2, getAccount(userId).getBalance().add(amountToTransfer), userId);
-            receiverAccount = getAccount(userId);
+            int numRows = jdbcTemplate.update(sql2, getAccount(userId).getBalance().add(amountToTransfer), userId);
+                if(numRows == 1){
+                receiverAccount = getAccount(userId);
+                }
+
         } catch (CannotGetJdbcConnectionException e) {
             throw new DaoException("Unable to connect ot server or db", e);
         } catch (BadSqlGrammarException e) {
@@ -89,13 +93,15 @@ public class JdbcAccountDao implements AccountDao{
 
         //different method for this insert?
 
-        String sql3 = "INSERT INTO transactions (account_id, amount, date_and_time, target_id) " + //need status
+        String sql3 = "INSERT INTO transactions (account_id, amount, date_and_time, target_id, status) " +
                 "VALUES (?, ?, ?, ?) RETURNING transaction_id;";
         int transactionId = jdbcTemplate.queryForObject(sql3, int.class, getAccount(userId).getAccount_id(),
-                amountToTransfer, LocalDate.now(), userId);
+                amountToTransfer, LocalDate.now(), userId, "Approved");
 
         return userAccount;
     }
+
+
 
     private Account mapRowToAccount(SqlRowSet rowSet){
         Account account = new Account();

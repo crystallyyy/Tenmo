@@ -57,9 +57,4 @@ public class TransactionController {
         return transactionDao.getTransaction(id);
     }
 
-    @RequestMapping(path = "/balance", method = RequestMethod.GET)
-    public Account getBalance(Principal principal) {
-        return accountDao.getAccount(principal);
-
-    }
 }
