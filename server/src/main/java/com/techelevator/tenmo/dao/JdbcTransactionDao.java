@@ -6,11 +6,13 @@ import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Component
 public class JdbcTransactionDao implements TransactionDao {
     private JdbcTemplate jdbcTemplate;
     public JdbcTransactionDao(JdbcTemplate jdbcTemplate) {
@@ -55,7 +57,7 @@ public class JdbcTransactionDao implements TransactionDao {
                 row.getInt("transaction_id"),
                 row.getInt("account_id"),
                 row.getBigDecimal("amount"),
-                row.getDate("dateTime").toLocalDate(),
+                row.getDate("date_and_time").toLocalDate(),
                 row.getInt("target_id")
         );
         return transaction;
