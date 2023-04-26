@@ -58,7 +58,8 @@ public class JdbcTransactionDao implements TransactionDao {
                 row.getInt("account_id"),
                 row.getBigDecimal("amount"),
                 row.getDate("date_and_time").toLocalDate(),
-                row.getInt("target_id")
+                row.getInt("target_id"),
+                row.getString("status")
         );
         return transaction;
     }

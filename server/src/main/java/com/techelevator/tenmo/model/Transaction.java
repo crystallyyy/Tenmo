@@ -10,14 +10,15 @@ public class Transaction {
     private BigDecimal amount;
     private LocalDate dateTime;
     private int target_id;
-   // private String status;
+   private String status = "Approved";
 
-    public Transaction(int transaction_id, int account_id, BigDecimal amount, LocalDate dateTime, int target_id) {
+    public Transaction(int transaction_id, int account_id, BigDecimal amount, LocalDate dateTime, int target_id, String status) {
         this.transaction_id = transaction_id;
         this.account_id = account_id;
         this.amount = amount;
         this.dateTime = dateTime;
         this.target_id = target_id;
+        this.status = status;
     }
 
     public Transaction(){}
