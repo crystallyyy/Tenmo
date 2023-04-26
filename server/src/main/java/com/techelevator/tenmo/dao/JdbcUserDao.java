@@ -81,4 +81,9 @@ public class JdbcUserDao implements UserDao {
         user.setAuthorities("USER");
         return user;
     }
+    private User mapRowToUserSensitive(SqlRowSet rs) {
+        User user = new User();
+        user.setUsername(rs.getString("username"));
+        return user;
+    }
 }
