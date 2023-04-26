@@ -25,5 +25,7 @@ public class TransactionController {
     }
 
     @RequestMapping(path = "/transactions", method = RequestMethod.GET)
-    public List<>
+    public List<Transaction> listAllTransactions() {
+        return
+    }
 }
