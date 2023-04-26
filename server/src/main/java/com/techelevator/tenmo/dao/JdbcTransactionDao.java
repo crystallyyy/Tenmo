@@ -19,11 +19,11 @@ public class JdbcTransactionDao implements TransactionDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public List<Transaction> listTransactions() {
+    public List<Transaction> listTransactions(String username) {
         List<Transaction> transactionList = new ArrayList<>();
-        String sql = "SELECT transaction_id, account_id, amount, date_and_time, target_id FROM transactions";
+        String sql = "SELECT transaction_id, transactions.account_id, amount, date_and_time, target_id FROM transactions JOIN account ON account.account_id = transactions.account_id JOIN tenmo_user as t ON t.user_id = account.user_id WHERE username = ?";
         try {
-            SqlRowSet results = jdbcTemplate.queryForRowSet(sql);
+            SqlRowSet results = jdbcTemplate.queryForRowSet(sql, username);
             while (results.next()){
                 Transaction transaction = mapRowToTransaction(results);
                 transactionList.add(transaction);
