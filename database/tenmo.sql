@@ -1,4 +1,4 @@
---BEGIN TRANSACTION;
+BEGIN TRANSACTION;
 
 DROP TABLE IF EXISTS tenmo_user, account, transactions;
 
@@ -44,4 +44,4 @@ CREATE TABLE transactions (
 	CONSTRAINT chk_amount CHECK (amount > '0')
 );
 
---COMMIT;
+COMMIT;
