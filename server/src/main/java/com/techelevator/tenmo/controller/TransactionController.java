@@ -1,4 +1,5 @@
 package com.techelevator.tenmo.controller;
+import com.techelevator.tenmo.dao.TransactionDao;
 import com.techelevator.tenmo.dao.UserDao;
 import com.techelevator.tenmo.model.Transaction;
 import com.techelevator.tenmo.model.User;
@@ -10,13 +11,16 @@ import javax.validation.Valid;
 import java.security.Principal;
 import java.util.List;
 
+
+//@PreAuthorize("isAuthenticated()")
 @RestController
-@PreAuthorize("isAuthenticated()")
 public class TransactionController {
     private UserDao userDao;
+    private TransactionDao transactionDao;
 
-    public TransactionController (UserDao userDao) {
+    public TransactionController (UserDao userDao, TransactionDao transactionDao) {
         this.userDao = userDao;
+        this.transactionDao = transactionDao;
 
     }
 
@@ -27,6 +31,6 @@ public class TransactionController {
 
     @RequestMapping(path = "/transactions", method = RequestMethod.GET)
     public List<Transaction> listAllTransactions() {
-        return
+        return transactionDao.listTransactions();
     }
 }
