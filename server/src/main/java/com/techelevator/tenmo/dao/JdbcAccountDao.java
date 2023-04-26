@@ -1,5 +1,6 @@
 package com.techelevator.tenmo.dao;
 
+import com.techelevator.tenmo.exception.DaoException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -12,8 +13,13 @@ import java.security.Principal;
 public class JdbcAccountDao implements AccountDao{
     private JdbcTemplate jdbcTemplate;
 
+    public JdbcAccountDao(JdbcTemplate jdbcTemplate){
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
     @Override
     public Account getAccount(int userId) {
+        //TODO: use principal as parameter?
         Account account = null;
         String sql = "SELECT * FROM account WHERE user_id = ?;";
         SqlRowSet result = jdbcTemplate.queryForRowSet(sql, userId);
@@ -48,6 +54,7 @@ public class JdbcAccountDao implements AccountDao{
                 "WHERE user_id = ?;";
 
         try {
+            //TODO: check 1 row affected, set as int
             jdbcTemplate.update(sql2, getAccount(userId).getBalance().add(amountToTransfer), userId);
             receiverAccount = getAccount(userId);
         } catch (CannotGetJdbcConnectionException e) {
@@ -57,6 +64,8 @@ public class JdbcAccountDao implements AccountDao{
         } catch (DataIntegrityViolationException e) {
             throw new DaoException("Data Integrity violation yo!", e);
         }
+
+        //TODO: insert row to transaction table
 
         return userAccount;
     }
