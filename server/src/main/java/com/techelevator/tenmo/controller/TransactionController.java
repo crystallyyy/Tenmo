@@ -1,4 +1,5 @@
 package com.techelevator.tenmo.controller;
+import com.techelevator.tenmo.dao.Account;
 import com.techelevator.tenmo.dao.AccountDao;
 import com.techelevator.tenmo.dao.TransactionDao;
 import com.techelevator.tenmo.dao.UserDao;
@@ -39,7 +40,7 @@ public class TransactionController {
     }
 
     @RequestMapping(path = "/balance", method = RequestMethod.GET)
-    public BigDecimal getBalance() {
-        return accountDao.getBalance();
+    public Account getBalance(Principal principal) {
+        return accountDao.getAccount(principal);
     }
 }
