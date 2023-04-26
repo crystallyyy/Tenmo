@@ -33,7 +33,7 @@ public class TransactionController {
 
     }
 
-    @RequestMapping(path = "/transfer", method = RequestMethod.GET)
+    @RequestMapping(path = "/user", method = RequestMethod.GET)
     public List<User> listUsers() {
         return userDao.findAll();
     }

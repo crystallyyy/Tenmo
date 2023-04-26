@@ -1,6 +1,7 @@
 package com.techelevator.tenmo.dao;
 
 import com.techelevator.tenmo.exception.DaoException;
+import com.techelevator.tenmo.model.Transaction;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Component
 public class JdbcAccountDao implements AccountDao{
@@ -27,9 +29,17 @@ public class JdbcAccountDao implements AccountDao{
         String sql = "SELECT * FROM account AS a " +
                 " JOIN tenmo_user AS tu ON a.user_id = tu.user_id " +
                 " WHERE username = ?;";
+        try {
         SqlRowSet result = jdbcTemplate.queryForRowSet(sql, principal.getName());
-
+        if (result.next()) {
             account = mapRowToAccount(result);
+        }
+    } catch (CannotGetJdbcConnectionException e) {
+        throw new DaoException("Unable to connect to server or database", e);
+    } catch (BadSqlGrammarException e) {
+        throw new DaoException("SQL syntax error", e);
+    }
+
 
         return account;
     }
@@ -95,6 +105,14 @@ public class JdbcAccountDao implements AccountDao{
                 amountToTransfer, LocalDate.now(), userId);
 
         return userAccount;
+    }
+
+    public void requestTEBucks(int userId, BigDecimal amount, LocalDate date, int targetUserId) {
+        Transaction transaction = null;
+
+        String sql = "INSERT INTO transactions (account_id, amount, date_and_time, target_id, status) VALUES ((SELECT account_id FROM account WHERE user_id = ?), ?, ?, ?, ?) RETURNING transaction_id;";
+        int transactionId = jdbcTemplate.queryForObject(sql, Integer.class, userId, amount, date, targetUserId, "Pending");
+
     }
 
     private Account mapRowToAccount(SqlRowSet rowSet){
