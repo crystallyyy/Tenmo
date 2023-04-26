@@ -1,4 +1,5 @@
 package com.techelevator.tenmo.controller;
+import com.techelevator.tenmo.dao.Account;
 import com.techelevator.tenmo.dao.AccountDao;
 import com.techelevator.tenmo.dao.TransactionDao;
 import com.techelevator.tenmo.dao.UserDao;
@@ -25,7 +26,7 @@ public class TransactionController {
     private AccountDao accountDao;
     private Principal principal;
 
-    public TransactionController (UserDao userDao, TransactionDao transactionDao, AccountDao accountDao) {
+    public TransactionController(UserDao userDao, TransactionDao transactionDao, AccountDao accountDao) {
         this.userDao = userDao;
         this.transactionDao = transactionDao;
         this.accountDao = accountDao;
@@ -48,6 +49,7 @@ public class TransactionController {
         return transactionDao.listTransactions(currentPrincipal);
     }
 
+
     // transaction specific
     //TODO: not good practice
     @RequestMapping(path = "/transactions/{id}", method = RequestMethod.GET)
@@ -55,4 +57,9 @@ public class TransactionController {
         return transactionDao.getTransaction(id);
     }
 
+    @RequestMapping(path = "/balance", method = RequestMethod.GET)
+    public Account getBalance(Principal principal) {
+        return accountDao.getAccount(principal);
+
+    }
 }
