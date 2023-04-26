@@ -1,4 +1,4 @@
---BEGIN TRANSACTION;
+BEGIN TRANSACTION;
 
 DROP TABLE IF EXISTS tenmo_user, account, transactions;
 
@@ -43,5 +43,11 @@ CREATE TABLE transactions (
 	CONSTRAINT fk_transaction_account FOREIGN KEY (account_id) REFERENCES account (account_id),
 	CONSTRAINT chk_amount CHECK (amount > '0')
 );
+	--user_id int NOT NULL DEFAULT nextval('seq_user_id'),
+	--username varchar(50) NOT NULL,
+	--password_hash varchar(200) NOT NULL,
+INSERT INTO tenmo_user (username, password_hash) VALUES ('dumbass', 'dumbass123');
+INSERT INTO account (user_id, balance) VALUES ((SELECT user_id FROM tenmo_user WHERE username = 'dumbass'), 1000);
+INSERT INTO transactions (account_id, amount, date_and_time, target_id) VALUES ((SELECT account_id from account JOIN tenmo_user as t ON t.user_id = account.user_id WHERE username = 'dumbass'), 500, '04/26/2023', 5);
 
---COMMIT;
+COMMIT;

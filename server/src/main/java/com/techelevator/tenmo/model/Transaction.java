@@ -1,17 +1,18 @@
 package com.techelevator.tenmo.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class Transaction {
     private int transaction_id;
     private int account_id;
     private BigDecimal amount;
-    private LocalDateTime dateTime;
+    private LocalDate dateTime;
     private int target_id;
    // private String status;
 
-    public Transaction(int transaction_id, int account_id, BigDecimal amount, LocalDateTime dateTime, int target_id) {
+    public Transaction(int transaction_id, int account_id, BigDecimal amount, LocalDate dateTime, int target_id) {
         this.transaction_id = transaction_id;
         this.account_id = account_id;
         this.amount = amount;
@@ -45,11 +46,11 @@ public class Transaction {
         this.amount = amount;
     }
 
-    public LocalDateTime getDateTime() {
+    public LocalDate getDateTime() {
         return dateTime;
     }
 
-    public void setDateTime(LocalDateTime dateTime) {
+    public void setDateTime(LocalDate dateTime) {
         this.dateTime = dateTime;
     }
 

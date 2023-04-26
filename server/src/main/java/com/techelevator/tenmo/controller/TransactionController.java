@@ -1,5 +1,6 @@
 package com.techelevator.tenmo.controller;
 import com.techelevator.tenmo.dao.UserDao;
+import com.techelevator.tenmo.model.Transaction;
 import com.techelevator.tenmo.model.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
