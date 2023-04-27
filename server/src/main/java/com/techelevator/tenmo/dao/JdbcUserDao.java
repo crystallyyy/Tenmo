@@ -16,7 +16,7 @@ import java.util.List;
 public class JdbcUserDao implements UserDao {
 
     private JdbcTemplate jdbcTemplate;
-
+    private static final BigDecimal DEFAULT_BALANCE = new BigDecimal("1000.00");
     public JdbcUserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -59,16 +59,27 @@ public class JdbcUserDao implements UserDao {
 
         // create user
         String sql = "INSERT INTO tenmo_user (username, password_hash) VALUES (?, ?) RETURNING user_id";
+
         String password_hash = new BCryptPasswordEncoder().encode(password);
         Integer newUserId;
+
         try {
             newUserId = jdbcTemplate.queryForObject(sql, Integer.class, username, password_hash);
+
         } catch (DataAccessException e) {
             return false;
         }
 
         // TODO: Create the account record with initial balance
 
+        //create account
+
+        String sql2 = "INSERT INTO account (user_id, balance) VALUES (?, ?) RETURNING account_id";
+        try {
+             jdbcTemplate.update(sql2, newUserId, DEFAULT_BALANCE);
+        } catch (DataAccessException e) {
+            return false;
+        }
         return true;
     }
 
@@ -79,11 +90,6 @@ public class JdbcUserDao implements UserDao {
         user.setPassword(rs.getString("password_hash"));
         user.setActivated(true);
         user.setAuthorities("USER");
-        return user;
-    }
-    private User mapRowToUserSensitive(SqlRowSet rs) {
-        User user = new User();
-        user.setUsername(rs.getString("username"));
         return user;
     }
 }

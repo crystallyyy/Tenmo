@@ -45,7 +45,6 @@ public class TransactionController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentPrincipal = authentication.getName();
 
-        //TODO: case of no currentPrincipal because user is not logged in
         return transactionDao.listTransactions(currentPrincipal);
     }
 

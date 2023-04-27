@@ -60,18 +60,19 @@ public class JdbcAccountDao implements AccountDao{
     public boolean createAccount(Account newAccount) {
 
         String sql = "INSERT INTO account (user_id, balance) VALUES (?, ?) RETURNING account_id;";
-        boolean isSuccessful = false;
         try {
             int newAccId = jdbcTemplate.queryForObject(sql, Integer.class, newAccount.getUser_id(), newAccount.getBalance());
-            isSuccessful = true;
+
         } catch (CannotGetJdbcConnectionException e) {
-            throw new DaoException("Unable to connect to server or database", e);
+            return false;
+
         } catch (BadSqlGrammarException e) {
-            throw new DaoException("SQL syntax error", e);
+            return false;
         } catch (DataIntegrityViolationException e) {
-            throw new DaoException("Data integrity violation", e);
+            return false;
+
         }
-        return isSuccessful;
+        return true;
     }
 
 
