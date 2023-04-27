@@ -34,7 +34,6 @@ public class JdbcAccountDao implements AccountDao{
         return account;
     }
 
-    //create getAccount with id as parameter?
     public Account getAccount(int id){
         Account account = null;
         String sql = "SELECT * FROM account " +
@@ -49,7 +48,7 @@ public class JdbcAccountDao implements AccountDao{
 
 
     public Account transferTEBucks(int userId, Account currentAccount, BigDecimal amountToTransfer){
-        //two account abjects as parameters
+        //TODO: change parameters
         Account userAccount = null;
         Account receiverAccount = null;
         String sql1 = "UPDATE account SET user_id = ?, balance = ? " +
@@ -101,6 +100,14 @@ public class JdbcAccountDao implements AccountDao{
         return userAccount;
     }
 
+    public void requestTEBucks(Account accountRequesting, BigDecimal amountRequested, int targetId){
+        //TODO: to and from usernames need to be printed
+        String sql = "INSERT INTO transactions (account_id, amount, date_and_time, target_id, status) " +
+                "VALUES (?, ?, ?, ?, ?) RETURNING transaction_id;";
+
+        int transactionId = jdbcTemplate.queryForObject(sql, int.class, accountRequesting.getAccount_id(),
+                amountRequested, LocalDate.now(), targetId, "Pending");
+    }
 
 
     private Account mapRowToAccount(SqlRowSet rowSet){

@@ -6,4 +6,5 @@ import java.security.Principal;
 public interface AccountDao {
     Account getAccount(Principal principal);
     Account transferTEBucks(int id, Account account, BigDecimal amountToTransfer);
+    void requestTEBucks(Account account, BigDecimal amount, int targetId);
 }
