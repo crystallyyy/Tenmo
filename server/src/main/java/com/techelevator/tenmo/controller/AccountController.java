@@ -8,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDate;
@@ -41,10 +42,16 @@ public class AccountController {
         return updatedAccount;
     }
 
+//    @ResponseStatus(HttpStatus.CREATED)
+//    @RequestMapping(path = "/request", method = RequestMethod.POST)
+//    public void requestTransfer(@PathVariable("user_id") int id, @PathVariable BigDecimal amount,
+//                                @PathVariable(value = "date_and_time") LocalDate date, @PathVariable(value = "target_id") int targetId){
+//        return accountDao.requestTEBucks(id, amount, date, targetId);
+//    }
+
     @ResponseStatus(HttpStatus.CREATED)
-    @RequestMapping(path = "/request", method = RequestMethod.POST)
-    public void requestTransfer(@PathVariable("user_id") int id, @PathVariable BigDecimal amount,
-                                @PathVariable(value = "date_and_time") LocalDate date, @PathVariable(value = "target_id") int targetId){
-        return accountDao.requestTEBucks(id, amount, date, targetId);
+    @RequestMapping(path = "/create", method = RequestMethod.POST)
+    public boolean create(@Valid @RequestBody Account account) {
+        return accountDao.createAccount(account);
     }
 }

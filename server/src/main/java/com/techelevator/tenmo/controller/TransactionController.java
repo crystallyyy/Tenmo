@@ -50,8 +50,6 @@ public class TransactionController {
     }
 
 
-    // transaction specific
-    //TODO: not good practice
     @RequestMapping(path = "/transactions/{id}", method = RequestMethod.GET)
     public Transaction getTransaction(@PathVariable int id) {
         return transactionDao.getTransaction(id);

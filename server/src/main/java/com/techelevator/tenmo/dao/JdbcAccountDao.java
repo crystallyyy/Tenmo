@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Component
 public class JdbcAccountDao implements AccountDao{
     private JdbcTemplate jdbcTemplate;
-
+    private Transaction transaction;
     public JdbcAccountDao(JdbcTemplate jdbcTemplate){
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -55,6 +55,23 @@ public class JdbcAccountDao implements AccountDao{
             account = mapRowToAccount(result);
         }
         return account;
+    }
+
+    public boolean createAccount(Account newAccount) {
+
+        String sql = "INSERT INTO account (user_id, balance) VALUES (?, ?) RETURNING account_id;";
+        boolean isSuccessful = false;
+        try {
+            int newAccId = jdbcTemplate.queryForObject(sql, Integer.class, newAccount.getUser_id(), newAccount.getBalance());
+            isSuccessful = true;
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DaoException("Unable to connect to server or database", e);
+        } catch (BadSqlGrammarException e) {
+            throw new DaoException("SQL syntax error", e);
+        } catch (DataIntegrityViolationException e) {
+            throw new DaoException("Data integrity violation", e);
+        }
+        return isSuccessful;
     }
 
 
@@ -111,12 +128,12 @@ public class JdbcAccountDao implements AccountDao{
         return userAccount;
     }
 
-
-    public void requestTEBucks(int userId, BigDecimal amount, LocalDate date, int targetUserId) {
-        Transaction transaction = null;
+    @Override
+    public Account requestTEBucks(int userId, BigDecimal amount, LocalDate date, int targetUserId) {
 
         String sql = "INSERT INTO transactions (account_id, amount, date_and_time, target_id, status) VALUES ((SELECT account_id FROM account WHERE user_id = ?), ?, ?, ?, ?) RETURNING transaction_id;";
         int transactionId = jdbcTemplate.queryForObject(sql, Integer.class, userId, amount, date, targetUserId, "Pending");
+        return null;
 
     }
 

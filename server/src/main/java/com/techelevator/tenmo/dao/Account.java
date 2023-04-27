@@ -6,9 +6,9 @@ import java.math.BigDecimal;
 
 public class Account {
     private int account_id;
-    @NotBlank
+//    @NotBlank
     private int user_id;
-    @NotBlank @Positive
+//    @NotBlank @Positive
     private BigDecimal balance = new BigDecimal(1000);
 
     public Account(int account_id, int user_id, BigDecimal balance) {
