@@ -13,6 +13,8 @@ import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class JdbcAccountDao implements AccountDao{
@@ -55,6 +57,18 @@ public class JdbcAccountDao implements AccountDao{
             account = mapRowToAccount(result);
         }
         return account;
+    }
+    public List<Account> getAccounts(Principal principal){
+        List<Account> accountList = new ArrayList<>();
+        String sql = "SELECT * FROM account AS a " +
+                " JOIN tenmo_user AS tu ON a.user_id = tu.user_id " +
+                " WHERE username = ?;";
+
+        SqlRowSet results = jdbcTemplate.queryForRowSet(sql, principal.getName());
+        while (results.next()) {
+            accountList.add(mapRowToAccount(results));
+        }
+        return accountList;
     }
 
     public boolean createAccount(Account newAccount) {
@@ -130,7 +144,7 @@ public class JdbcAccountDao implements AccountDao{
     }
 
     @Override
-    public Account requestTEBucks(int userId, BigDecimal amount, LocalDate date, int targetUserId) {
+    public Transaction requestTEBucks(int userId, BigDecimal amount, LocalDate date, int targetUserId) {
 
         String sql = "INSERT INTO transactions (account_id, amount, date_and_time, target_id, status) VALUES ((SELECT account_id FROM account WHERE user_id = ?), ?, ?, ?, ?) RETURNING transaction_id;";
         int transactionId = jdbcTemplate.queryForObject(sql, Integer.class, userId, amount, date, targetUserId, "Pending");

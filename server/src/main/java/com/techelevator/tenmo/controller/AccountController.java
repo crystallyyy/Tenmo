@@ -2,7 +2,9 @@ package com.techelevator.tenmo.controller;
 
 import com.techelevator.tenmo.dao.Account;
 import com.techelevator.tenmo.dao.AccountDao;
+import com.techelevator.tenmo.dao.TransactionDao;
 import com.techelevator.tenmo.dao.UserDao;
+import com.techelevator.tenmo.model.Transaction;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -12,12 +14,14 @@ import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDate;
+import java.util.List;
 
 @PreAuthorize("isAuthenticated()")
 @RestController
 public class AccountController {
     private UserDao userDao;
     private AccountDao accountDao;
+    private TransactionDao transactionDao;
     private Principal principal;
 
 
@@ -27,13 +31,13 @@ public class AccountController {
     }
 
     @RequestMapping(path = "/balance", method = RequestMethod.GET)
-    public Account getBalance(Principal principal) {
-        return accountDao.getAccount(principal);
+    public List<Account> getBalance(Principal principal) {
+        return accountDao.getAccounts(principal);
 
     }
 
     @RequestMapping(path = "/transfer", method = RequestMethod.PUT)
-    public Account transferBucks(@PathVariable(value = "target_id") int id, @RequestBody Account account, @PathVariable(value = "amount") BigDecimal amountToTransfer){
+    public Account transferBucks(@RequestParam(value = "target_id") int id, @RequestBody Account account, @RequestParam(value = "amount") BigDecimal amountToTransfer){
         Account updatedAccount = accountDao.transferTEBucks(id, account, amountToTransfer);
         if(updatedAccount == null){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "account id not found");
@@ -42,12 +46,12 @@ public class AccountController {
         return updatedAccount;
     }
 
-//    @ResponseStatus(HttpStatus.CREATED)
-//    @RequestMapping(path = "/request", method = RequestMethod.POST)
-//    public void requestTransfer(@PathVariable("user_id") int id, @PathVariable BigDecimal amount,
-//                                @PathVariable(value = "date_and_time") LocalDate date, @PathVariable(value = "target_id") int targetId){
-//        return accountDao.requestTEBucks(id, amount, date, targetId);
-//    }
+    @ResponseStatus(HttpStatus.CREATED)
+    @RequestMapping(path = "/request", method = RequestMethod.POST)
+    public Transaction requestTransfer(@RequestParam(value = "user_id") int id, @RequestParam BigDecimal amount,
+                                       @RequestParam(value = "date_and_time") LocalDate date, @RequestParam(value = "target_id") int targetId){
+        return accountDao.requestTEBucks(id, amount, date, targetId);
+    }
 
     @ResponseStatus(HttpStatus.CREATED)
     @RequestMapping(path = "/create", method = RequestMethod.POST)
