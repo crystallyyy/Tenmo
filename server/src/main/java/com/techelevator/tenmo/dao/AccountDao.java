@@ -11,6 +11,8 @@ public interface AccountDao {
     Account getAccount(Principal principal);
     List<Account> getAccounts(Principal principal);
     Account transferTEBucks(int id, Account account, BigDecimal amountToTransfer);
-    Transaction requestTEBucks(int userId, BigDecimal amount, LocalDate date, int targetUserId);
+
     public boolean createAccount(Account newAccount);
+
+    void requestTEBucks(Account account, BigDecimal amount, int targetId);
 }

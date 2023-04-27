@@ -48,9 +48,10 @@ public class AccountController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @RequestMapping(path = "/request", method = RequestMethod.POST)
-    public Transaction requestTransfer(@RequestParam(value = "user_id") int id, @RequestParam BigDecimal amount,
-                                       @RequestParam(value = "date_and_time") LocalDate date, @RequestParam(value = "target_id") int targetId){
-        return accountDao.requestTEBucks(id, amount, date, targetId);
+
+    public void requestTransfer(@RequestBody Account requestingAccount, @PathVariable BigDecimal amount,
+                                 @PathVariable(value = "target_id") int targetId){
+        accountDao.requestTEBucks(requestingAccount, amount, targetId);
     }
 
     @ResponseStatus(HttpStatus.CREATED)

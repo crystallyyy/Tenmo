@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class Transaction {
+    //TODO: transaction_id starts at 3001 in database
     private int transaction_id;
     private int account_id;
     private BigDecimal amount;
