@@ -209,7 +209,7 @@ public Transaction getTransaction(int transactionId) {
                 row.getInt("target_id"),
                 row.getString("status")
         );
-
+    }
     private Account mapRowToAccount(SqlRowSet rowSet){
         Account account = new Account();
         account.setAccount_id(rowSet.getInt("account_id"));
