@@ -1,20 +1,24 @@
 package com.techelevator.tenmo.dao;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 public class Account {
     private int account_id;
-//    @NotBlank
-    private int user_id;
-//    @NotBlank @Positive
-    private BigDecimal balance = new BigDecimal(1000);
 
-    public Account(int account_id, int user_id, BigDecimal balance) {
+    private int user_id;
+
+    private BigDecimal balance = new BigDecimal(1000);
+    private boolean is_primary;
+
+    public Account(int account_id, int user_id, BigDecimal balance, boolean is_primary) {
         this.account_id = account_id;
         this.user_id = user_id;
         this.balance = balance;
+        this.is_primary = is_primary;
     }
 
     public Account(){}
@@ -41,5 +45,13 @@ public class Account {
 
     public void setBalance(BigDecimal balance) {
         this.balance = balance;
+    }
+
+    public boolean isIs_primary() {
+        return is_primary;
+    }
+
+    public void setIs_primary(boolean is_primary) {
+        this.is_primary = is_primary;
     }
 }

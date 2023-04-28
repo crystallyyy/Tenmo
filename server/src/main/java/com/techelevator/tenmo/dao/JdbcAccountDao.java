@@ -41,7 +41,7 @@ public class JdbcAccountDao implements AccountDao{
     @Override
     public List<Account> getAccounts(Principal principal){
         List<Account> accountList = new ArrayList<>();
-        String sql = "SELECT * FROM account AS a " +
+        String sql = "SELECT account_id, a.user_id, balance, is_primary FROM account AS a " +
                 " JOIN tenmo_user AS tu ON a.user_id = tu.user_id " +
                 " WHERE username = ?;";
 
@@ -66,9 +66,9 @@ public class JdbcAccountDao implements AccountDao{
 
     public boolean createAccount(Account newAccount) {
 
-        String sql = "INSERT INTO account (user_id, balance) VALUES (?, ?) RETURNING account_id;";
+        String sql = "INSERT INTO account (user_id, balance, is_primary) VALUES (?, ?, ?) RETURNING account_id;";
         try {
-            int newAccId = jdbcTemplate.queryForObject(sql, Integer.class, newAccount.getUser_id(), newAccount.getBalance());
+            int newAccId = jdbcTemplate.queryForObject(sql, Integer.class, newAccount.getUser_id(), newAccount.getBalance(), newAccount.isIs_primary());
 
         } catch (CannotGetJdbcConnectionException e) {
             return false;
@@ -83,23 +83,22 @@ public class JdbcAccountDao implements AccountDao{
     }
 
 
-
     public void transferTEBucks(Transaction transaction) {
-        Transaction newTransaction = null;
+        //TODO: change parameters
         String sql = "INSERT INTO transactions (user_id, account_id, amount, target_id, status) VALUES (?, ?, ?, ?, ?) RETURNING transaction_id;";
+        String sql2 = "INSERT INTO transactions(user_id, account_id, amount, target_id, status) VALUES (?, (SELECT account_id FROM account WHERE user_id = ? AND is_primary = true), ?, ?, ?) RETURNING transaction_id;";
         try {
-            int transactionId1 = jdbcTemplate.queryForObject(sql, Integer.class, transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount(), transaction.getTarget_id(), transaction.getStatus());
-            int transactionId2 =
+            jdbcTemplate.queryForObject(sql, Integer.class, transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount(), transaction.getTarget_id(), transaction.getStatus());
+            jdbcTemplate.queryForObject(sql2, Integer.class, transaction.getTarget_id(), transaction.getTarget_id(), transaction.getAmount(), transaction.getUser_id(), transaction.getStatus());
 
 
-        } catch (CannotGetJdbcConnectionException e) {
-            System.out.println("Errpr 1");
-
-        } catch (BadSqlGrammarException e) {
-            System.out.println("Error 2");
-
-        }
-//            return newTransaction;
+            } catch (CannotGetJdbcConnectionException e) {
+                throw new DaoException("Unable to connect ot server or db", e);
+            } catch (BadSqlGrammarException e) {
+                throw new DaoException("SQL syntax error", e);
+            } catch (DataIntegrityViolationException e) {
+                throw new DaoException("Data Integrity violation", e);
+            }
     }
 
 
@@ -194,6 +193,7 @@ public class JdbcAccountDao implements AccountDao{
 
         System.out.println("The user " + requestingUsername + " is requesting $" + transaction.getAmount() + " from user " + targetUsername );
     }
+
 
     private Account mapRowToAccount(SqlRowSet rowSet){
         Account account = new Account();
