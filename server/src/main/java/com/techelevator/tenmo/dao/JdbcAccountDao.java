@@ -1,6 +1,7 @@
 package com.techelevator.tenmo.dao;
 
 import com.techelevator.tenmo.exception.DaoException;
+import com.techelevator.tenmo.exception.TenmoException;
 import com.techelevator.tenmo.model.Transaction;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.BadSqlGrammarException;
@@ -20,30 +21,9 @@ import java.util.List;
 public class JdbcAccountDao implements AccountDao{
     private JdbcTemplate jdbcTemplate;
     private Transaction transaction;
+
     public JdbcAccountDao(JdbcTemplate jdbcTemplate){
         this.jdbcTemplate = jdbcTemplate;
-    }
-
-    @Override
-    public Account getAccount(Principal principal) {
-
-        Account account = null;
-        String sql = "SELECT * FROM account AS a " +
-                " JOIN tenmo_user AS tu ON a.user_id = tu.user_id " +
-                " WHERE username = ?;";
-        try {
-        SqlRowSet result = jdbcTemplate.queryForRowSet(sql, principal.getName());
-        if (result.next()) {
-            account = mapRowToAccount(result);
-        }
-    } catch (CannotGetJdbcConnectionException e) {
-        throw new DaoException("Unable to connect to server or database", e);
-    } catch (BadSqlGrammarException e) {
-        throw new DaoException("SQL syntax error", e);
-    }
-
-
-        return account;
     }
 
     public Account getAccount(int id){
@@ -57,6 +37,8 @@ public class JdbcAccountDao implements AccountDao{
         }
         return account;
     }
+
+    @Override
     public List<Account> getAccounts(Principal principal){
         List<Account> accountList = new ArrayList<>();
         String sql = "SELECT * FROM account AS a " +
@@ -69,6 +51,14 @@ public class JdbcAccountDao implements AccountDao{
         }
         return accountList;
     }
+
+    public BigDecimal getAccountBalanceById(int userId){
+        String sql1 = "SELECT balance FROM account WHERE user_id = ?;";
+        SqlRowSet result = jdbcTemplate.queryForRowSet(sql1, userId);
+        BigDecimal balance = result.getBigDecimal("balance");
+        return balance;
+    }
+
 
     public boolean createAccount(Account newAccount) {
 
@@ -143,15 +133,78 @@ public Transaction getTransaction(int transactionId) {
         jdbcTemplate.update(sql, amount, user_id, account_id);
     }
 
+//    public Account transferTEBucks(Transaction transaction){
+//
+//        Account userAccount = null;
+//        String sql0 = "UPDATE account SET balance = ? " +
+//                "WHERE user_id = ?;";
+//
+//        BigDecimal currentBalance = getAccountBalanceById(transaction.getUser_id());
+//
+//        if(currentBalance.compareTo(transaction.getAmount()) != -1 && transaction.getUser_id() != transaction.getTarget_id()) {
+//
+//            try {
+//                jdbcTemplate.update(sql0, currentBalance.subtract(transaction.getAmount()),transaction.getUser_id());
+//                userAccount = getAccount(transaction.getUser_id());
+//            } catch (CannotGetJdbcConnectionException e) {
+//                throw new DaoException("Unable to connect ot server or db", e);
+//            } catch (BadSqlGrammarException e) {
+//                throw new DaoException("SQL syntax error", e);
+//            } catch (DataIntegrityViolationException e) {
+//                throw new DaoException("Data Integrity violation", e);
+//            }
+//        } else {
+//            //TODO: create exception
+//            throw new TenmoException("Insufficient funds or invalid user ID");
+//        }
+//
+//        BigDecimal receiverBalance = getAccountBalanceById(transaction.getTarget_id());
+//        try {
+//            int numRows = jdbcTemplate.update(sql0, receiverBalance.add(transaction.getAmount()), transaction.getTarget_id());
+//
+//        } catch (CannotGetJdbcConnectionException e) {
+//            throw new DaoException("Unable to connect ot server or db", e);
+//        } catch (BadSqlGrammarException e) {
+//            throw new DaoException("SQL syntax error", e);
+//        } catch (DataIntegrityViolationException e) {
+//            throw new DaoException("Data Integrity violation yo!", e);
+//        }
+//
+//        String sql4 = "INSERT INTO transactions (user_id, account_id, amount, target_id, status) " +
+//                "VALUES (?, ?, ?, ?, ?) RETURNING transaction_id;";
+//
+//        String sql = "SELECT account_id FROM account WHERE user_id = ?;";
+//        SqlRowSet result = jdbcTemplate.queryForRowSet(sql, transaction.getTarget_id());
+//        int accountId2 = result.getInt("account_id");
+//        int transactionId = jdbcTemplate.queryForObject(sql4, int.class, transaction.getUser_id(), transaction.getAccount_id(),
+//                transaction.getAmount(), transaction.getTarget_id(), transaction.getStatus());
+//        int transactionId2 = jdbcTemplate.queryForObject(sql4, int.class, transaction.getTarget_id(), accountId2, transaction.getAmount(),
+//                transaction.getTarget_id(), transaction.getStatus());
+//
+//        return userAccount;
+//    }
+
+
     @Override
-    public void requestTEBucks(Account accountRequesting, BigDecimal amountRequested, int targetId){
-        //TODO: to and from usernames need to be printed
-        String sql = "INSERT INTO transactions (account_id, amount, date_and_time, target_id, status) " +
-                "VALUES (?, ?, ?, ?, ?) RETURNING transaction_id;";
+    public void requestTEBucks(Transaction transaction){
+        String sql1 = "INSERT INTO transactions (user_id, account_id, amount, target_id, status) " +
+                    "VALUES (?, ?, ?, ?, ?) RETURNING transaction_id;";
 
-        int transactionId = jdbcTemplate.queryForObject(sql, int.class, accountRequesting.getAccount_id(),
-                amountRequested, LocalDate.now(), targetId, "Pending");
+        int transactionId1 = jdbcTemplate.queryForObject(sql1, int.class,  transaction.getUser_id(), transaction.getAccount_id(),
+                transaction.getAmount(), transaction.getTarget_id(), "Pending");
+        int transactionId2 = jdbcTemplate.queryForObject(sql1, int.class, transaction.getTarget_id(), transaction.getAccount_id(),
+                transaction.getAmount(), transaction.getTarget_id(), "Pending");
 
+        //separate method for this?, return string?
+        String sql3 = "SELECT username FROM tenmo_user WHERE user_id = ?;";
+        SqlRowSet result1 = jdbcTemplate.queryForRowSet(sql3, transaction.getUser_id());
+        String requestingUsername = result1.getString("username");
+
+
+        SqlRowSet result2 = jdbcTemplate.queryForRowSet(sql3, transaction.getTarget_id());
+        String targetUsername = result2.getString("username");
+
+        System.out.println("The user " + requestingUsername + " is requesting $" + transaction.getAmount() + " from user " + targetUsername );
     }
 
     private Transaction mapRowToTransaction (SqlRowSet row) {

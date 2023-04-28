@@ -5,17 +5,18 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class Transaction {
-    //TODO: transaction_id starts at 3001 in database
     private int transaction_id;
+    private int user_id;
     private int account_id;
     private BigDecimal amount;
     private LocalDate dateTime;
-    private int user_id;
     private int target_id;
    private String status = "Approved";
 
-    public Transaction(int transaction_id, int account_id,int user_id,  BigDecimal amount, int target_id, String status) {
+
+    public Transaction(int transaction_id, int user_id, int account_id, BigDecimal amount, int target_id, String status) {
         this.transaction_id = transaction_id;
+        this.user_id = user_id;
         this.account_id = account_id;
         this.user_id = user_id;
         this.amount = amount;
@@ -33,6 +34,7 @@ public class Transaction {
         this.transaction_id = transaction_id;
     }
 
+
     public int getAccount_id() {
         return account_id;
     }
@@ -47,14 +49,6 @@ public class Transaction {
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
-    }
-
-    public LocalDate getDateTime() {
-        return dateTime;
-    }
-
-    public void setDateTime(LocalDate dateTime) {
-        this.dateTime = dateTime;
     }
 
     public int getTarget_id() {

@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 
+import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import java.util.List;
 @Component
 public class JdbcTransactionDao implements TransactionDao {
     private JdbcTemplate jdbcTemplate;
+
     public JdbcTransactionDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -56,6 +58,7 @@ public class JdbcTransactionDao implements TransactionDao {
         return transaction;
     }
 
+    //TODO: create handler method
     public List<Transaction> getPendingTransactions(Principal principal){
         List<Transaction> pendingTransactions = new ArrayList<>();
         String sql = "SELECT transaction_id, transactions.account_id, amount, date_and_time, target_id, status FROM " +
@@ -75,8 +78,18 @@ public class JdbcTransactionDao implements TransactionDao {
         return pendingTransactions;
     }
 
-    public Transaction approveRequest(Transaction transactionApproved, int transactionId){
-        Transaction transactionUpdated = null;
+    public Transaction createTransaction(Transaction transaction){
+        Transaction newTransaction = null;
+        String sql = "INSERT INTO transactions (user_id, account_id, amount, target_id, status) " +
+                "VALUES (?, ?, ?, ?, ?) RETURNING transaction_id;";
+        int transactionId = jdbcTemplate.queryForObject(sql, int.class, transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount(),
+                transaction.getTarget_id(), transaction.getStatus());
+        newTransaction = getTransaction(transactionId);
+        return newTransaction;
+    }
+
+    public Transaction approveRequest(int transactionId){
+        Transaction transactionApproved = getTransaction(transactionId);
 
         String sql1 = "UPDATE transactions SET status = ? " +
                 "WHERE transaction_id = ?;";
@@ -84,39 +97,36 @@ public class JdbcTransactionDao implements TransactionDao {
         jdbcTemplate.update(sql1, "Approved", transactionId);
 
         String sql2 = "UPDATE account SET balance = ? " +
-                "WHERE account_id = ?;";
-        String sql3 = "SELECT balance FROM account WHERE account_id = ?;";
+                "WHERE user_id = ?;";
+        String sql3 = "SELECT balance FROM account WHERE user_id = ?;";
 
-        SqlRowSet result = jdbcTemplate.queryForRowSet(sql3, transactionApproved.getAccount_id());
+
+        SqlRowSet result = jdbcTemplate.queryForRowSet(sql3, transactionApproved.getTarget_id());
         BigDecimal currentBalance = result.getBigDecimal("balance");
 
-        jdbcTemplate.update(sql2,currentBalance.add(transactionApproved.getAmount()), transactionApproved.getAccount_id());
+        jdbcTemplate.update(sql2,currentBalance.subtract(transactionApproved.getAmount()), transactionApproved.getTarget_id());
 
-        String sql4 = "UPDATE account SET balance = ? " +
-                "WHERE user_id = ?;";
-        String sql5 = "SELECT balance FROM account WHERE user_id = ?;";
-        SqlRowSet results = jdbcTemplate.queryForRowSet(sql5, transactionApproved.getTarget_id());
+        SqlRowSet results = jdbcTemplate.queryForRowSet(sql3, transactionApproved.getUser_id());
         BigDecimal currentBalance2 = results.getBigDecimal("balance");
 
-        jdbcTemplate.update(sql4, currentBalance2.subtract(transactionApproved.getAmount()), transactionApproved.getTarget_id());
-
-        transactionUpdated = getTransaction(transactionId);
+        jdbcTemplate.update(sql3, currentBalance2.add(transactionApproved.getAmount()), transactionApproved.getUser_id());
 
         //TODO: consider sout to conceal information in transaction
-        return transactionUpdated;
+        return transactionApproved;
     }
 
     public void denyRequest(int transactionId){
         String sql =  "DELETE FROM transactions WHERE transaction_id = ?;";
         jdbcTemplate.update(sql, transactionId);
+        //TODO: delete from sending account transactions; maybe use transaction_id - 1?
     }
 
 
     private Transaction mapRowToTransaction (SqlRowSet row) {
         Transaction transaction = new Transaction(
                 row.getInt("transaction_id"),
-                row.getInt("account_id"),
                 row.getInt("user_id"),
+                row.getInt("account_id"),
                 row.getBigDecimal("amount"),
                 row.getInt("target_id"),
                 row.getString("status")

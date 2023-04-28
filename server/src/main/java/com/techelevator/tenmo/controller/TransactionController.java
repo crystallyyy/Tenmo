@@ -48,10 +48,25 @@ public class TransactionController {
         return transactionDao.listTransactions(currentPrincipal);
     }
 
+    @RequestMapping(path = "transactions/filter", method = RequestMethod.GET)
+    public List<Transaction> getPendingTransactions(@RequestParam String status, Principal principal){
+        //TODO: do we need getPendingTransactions
+        return transactionDao.listTransactions(principal.getName());
+    }
 
     @RequestMapping(path = "/transactions/{id}", method = RequestMethod.GET)
     public Transaction getTransaction(@PathVariable int id) {
         return transactionDao.getTransaction(id);
+    }
+
+    @RequestMapping(path = "/request/{id}", method = RequestMethod.PUT)
+    public Transaction approveRequest(@PathVariable(value = "transaction_id") int transactionId){
+        return transactionDao.approveRequest(transactionId);
+    }
+
+    @RequestMapping(path = "/request/{id}", method = RequestMethod.DELETE)
+    public void denyRequest(@PathVariable(value = "transaction_id") int transactionId){
+        transactionDao.denyRequest(transactionId);
     }
 
 }

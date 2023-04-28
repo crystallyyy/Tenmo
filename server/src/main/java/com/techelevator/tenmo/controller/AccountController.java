@@ -36,9 +36,10 @@ public class AccountController {
         return accountDao.getAccounts(principal);
 
     }
+
     @ResponseStatus(HttpStatus.CREATED)
     @RequestMapping(path = "/transfer", method = RequestMethod.POST)
-    public void createTransaction(@Valid @RequestBody Transaction transaction){
+    public void createTransaction(@Valid @RequestBody Transaction transaction) {
         if (transaction.getAmount().compareTo(ZERO) == 1) {
             accountDao.transferTEBucks(transaction);
             accountDao.decreaseBal(transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount());
@@ -47,17 +48,24 @@ public class AccountController {
             accountDao.addBal(transaction.getTarget_id(), accountDao.getAccount(transaction.getTarget_id()).getAccount_id(), transaction.getAmount());
         } else {
             throw new RuntimeException("Amount must be greater than 0");
+
+
         }
 
     }
-
+    //    @ResponseStatus(HttpStatus.ACCEPTED)
+//    @RequestMapping(path = "/transfer", method = RequestMethod.PUT)
+//    public Account transferBucks(@Valid @RequestBody Transaction transaction){
+//        Account updatedAccount = accountDao.transferTEBucks(transaction);
+//        if(updatedAccount == null){
+//            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+//
+//        }
 
     @ResponseStatus(HttpStatus.CREATED)
     @RequestMapping(path = "/request", method = RequestMethod.POST)
-
-    public void requestTransfer(@RequestBody Account requestingAccount, @PathVariable BigDecimal amount,
-                                 @PathVariable(value = "target_id") int targetId){
-        accountDao.requestTEBucks(requestingAccount, amount, targetId);
+    public void requestTransfer(@Valid @RequestBody Transaction transaction){
+        accountDao.requestTEBucks(transaction);
     }
 
     @ResponseStatus(HttpStatus.CREATED)
