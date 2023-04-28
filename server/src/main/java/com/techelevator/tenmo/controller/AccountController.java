@@ -36,11 +36,12 @@ public class AccountController {
 
     }
 
+    @ResponseStatus(HttpStatus.ACCEPTED)
     @RequestMapping(path = "/transfer", method = RequestMethod.PUT)
-    public Account transferBucks(@RequestParam(value = "target_id") int id, @RequestBody Account account, @RequestParam(value = "amount") BigDecimal amountToTransfer){
-        Account updatedAccount = accountDao.transferTEBucks(id, account, amountToTransfer);
+    public Account transferBucks(@Valid @RequestBody Transaction transaction){
+        Account updatedAccount = accountDao.transferTEBucks(transaction);
         if(updatedAccount == null){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "account id not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
         return updatedAccount;
@@ -49,9 +50,8 @@ public class AccountController {
     @ResponseStatus(HttpStatus.CREATED)
     @RequestMapping(path = "/request", method = RequestMethod.POST)
 
-    public void requestTransfer(@RequestBody Account requestingAccount, @PathVariable BigDecimal amount,
-                                 @PathVariable(value = "target_id") int targetId){
-        accountDao.requestTEBucks(requestingAccount, amount, targetId);
+    public void requestTransfer(@Valid @RequestBody Transaction transaction){
+        accountDao.requestTEBucks(transaction);
     }
 
     @ResponseStatus(HttpStatus.CREATED)

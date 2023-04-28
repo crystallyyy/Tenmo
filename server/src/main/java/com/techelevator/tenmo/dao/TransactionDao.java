@@ -8,4 +8,6 @@ public interface TransactionDao {
     public List<Transaction> listTransactions(String username);
 
     public Transaction getTransaction(int transactionId);
+    public Transaction approveRequest(int transactionId);
+    public void denyRequest(int transactionId);
 }
