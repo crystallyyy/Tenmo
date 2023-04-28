@@ -49,7 +49,7 @@ public class JdbcAccountDao implements AccountDao{
     public Account getAccount(int id){
         Account account = null;
         String sql = "SELECT * FROM account " +
-                "WHERE user_id = ?;";
+                "WHERE account_id = ?;";
 
         SqlRowSet result = jdbcTemplate.queryForRowSet(sql, id);
         if (result.next()) {
@@ -89,59 +89,105 @@ public class JdbcAccountDao implements AccountDao{
     }
 
 
-    public Account transferTEBucks(int userId, Account currentAccount, BigDecimal amountToTransfer){
-        //TODO: change parameters
-        Account userAccount = null;
-        Account receiverAccount = null;
-        String sql1 = "UPDATE account SET user_id = ?, balance = ? " +
-                "WHERE account_id = ?;";
 
-        if(amountToTransfer.compareTo(currentAccount.getBalance()) == 1 && userId != currentAccount.getUser_id()) {
-
-            try {
-                jdbcTemplate.update(sql1, currentAccount.getUser_id(), currentAccount.getBalance().subtract(amountToTransfer),
-                        currentAccount.getAccount_id());
-                userAccount = getAccount(currentAccount.getUser_id());
-            } catch (CannotGetJdbcConnectionException e) {
-                throw new DaoException("Unable to connect ot server or db", e);
-            } catch (BadSqlGrammarException e) {
-                throw new DaoException("SQL syntax error", e);
-            } catch (DataIntegrityViolationException e) {
-                throw new DaoException("Data Integrity violation", e);
-            }
-        } else {
-            //TODO: create exception
-            throw new RuntimeException("Insufficient funds or invalid user ID");
+//        catch (DataIntegrityViolationException e) {
+//            System.out.println("poop");
+//            return false;
+//
+//        }
+public Transaction getTransaction(int transactionId) {
+    Transaction transaction = null;
+    String sql = "SELECT transaction_id, account_id, user_id, amount, target_id, status FROM transactions WHERE transaction_id = ?;";
+    try {
+        SqlRowSet result = jdbcTemplate.queryForRowSet(sql, transactionId);
+        if (result.next()) {
+            transaction = mapRowToTransaction(result);
         }
-        //will method continue running?
-
-        String sql2 = "UPDATE account SET balance = ? " +
-                "WHERE user_id = ?;";
-
+    } catch (CannotGetJdbcConnectionException e) {
+        throw new DaoException("Unable to connect to server or database", e);
+    } catch (BadSqlGrammarException e) {
+        throw new DaoException("SQL syntax error", e);
+    }
+    return transaction;
+}
+    public Transaction transferTEBucks(Transaction transaction) {
+        //TODO: change parameters
+        Transaction newTransaction = null;
+        String sql = "INSERT INTO transactions (account_id, user_id, amount, target_id, status) VALUES (?, ?, ?, ?, ?) RETURNING transaction_id;";
         try {
-            int numRows = jdbcTemplate.update(sql2, getAccount(userId).getBalance().add(amountToTransfer), userId);
-                if(numRows == 1){
-                receiverAccount = getAccount(userId);
-                }
+            System.out.println(transaction.getAccount_id());
+            int newTransactionId = jdbcTemplate.queryForObject(sql, Integer.class, transaction.getAccount_id(), transaction.getUser_id(), transaction.getAmount(), transaction.getTarget_id(), transaction.getStatus());
+
+            newTransaction = getTransaction(newTransactionId);
 
         } catch (CannotGetJdbcConnectionException e) {
-            throw new DaoException("Unable to connect ot server or db", e);
+            System.out.println("Errpr 1");
+
         } catch (BadSqlGrammarException e) {
-            throw new DaoException("SQL syntax error", e);
-        } catch (DataIntegrityViolationException e) {
-            throw new DaoException("Data Integrity violation yo!", e);
+            System.out.println("Error 2");
+
         }
-
-        //different method for this insert?
-
-        String sql3 = "INSERT INTO transactions (account_id, amount, date_and_time, target_id, status) " +
-                "VALUES (?, ?, ?, ?) RETURNING transaction_id;";
-        int transactionId = jdbcTemplate.queryForObject(sql3, int.class, getAccount(userId).getAccount_id(),
-                amountToTransfer, LocalDate.now(), userId, "Approved");
-
-        return userAccount;
+            return newTransaction;
+//        String sql1 = "UPDATE account SET user_id = ?, balance = ? " +
+//                "WHERE account_id = ?;";
+//        System.out.println(newTransaction.getTransaction_id());
+//        System.out.println(getAccount(newTransaction.getAccount_id()).getUser_id());
+//        System.out.println(getAccount(newTransaction.getAccount_id()).getBalance());
+//        System.out.println(newTransaction.getAmount());
+////        if(transaction.getAmount().compareTo(getAccount(transaction.getAccount_id()).getBalance()) == 1) {
+//
+//            try {
+//                jdbcTemplate.update(sql1, getAccount(newTransaction.getUser_id()), getAccount(newTransaction.getUser_id()).getBalance().subtract(newTransaction.getAmount()),
+//                        newTransaction.getAccount_id());
+//            } catch (CannotGetJdbcConnectionException e) {
+//                throw new DaoException("Unable to connect ot server or db", e);
+//            } catch (BadSqlGrammarException e) {
+//                throw new DaoException("SQL syntax error", e);
+//            } catch (DataIntegrityViolationException e) {
+//                throw new DaoException("Data Integrity violation", e);
+//            }
+////        } else {
+////            //TODO: create exception
+////            throw new RuntimeException("Insufficient funds or invalid user ID");
+////        }
+//        //will method continue running?
+//
+//        String sql2 = "UPDATE account SET balance = ? " +
+//                "WHERE user_id = ?;";
+//
+//        try {
+//            int numRows = jdbcTemplate.update(sql2, getAccount(newTransaction.getTarget_id()).getBalance().add(newTransaction.getAmount()), newTransaction.getTarget_id());
+//
+//        } catch (CannotGetJdbcConnectionException e) {
+//            throw new DaoException("Unable to connect ot server or db", e);
+//        } catch (BadSqlGrammarException e) {
+//            throw new DaoException("SQL syntax error", e);
+//        } catch (DataIntegrityViolationException e) {
+//            throw new DaoException("Data Integrity violation yo!", e);
+//        }
+//
+//        //different method for this insert?
+//
+////        String sql3 = "INSERT INTO transactions (account_id, amount, date_and_time, target_id, status) " +
+////                "VALUES (?, ?, ?, ?) RETURNING transaction_id;";
+////        int transactionId = jdbcTemplate.queryForObject(sql3, int.class, getAccount(userId).getAccount_id(),
+////                amountToTransfer, LocalDate.now(), userId, "Approved");
+//        return newTransaction;
     }
 
+    @Override
+    public void addBal(int user_id, int account_id, BigDecimal amount) {
+        String sql = "UPDATE account SET balance = balance + ? " +
+                "WHERE user_id = ? AND account_id = ?;";
+        jdbcTemplate.update(sql, amount, user_id, account_id);
+    }
+
+    @Override
+    public void decreaseBal(int target_id, int account_id, BigDecimal amount) {
+        String sql = "UPDATE account SET balance =  balance - ? " +
+                "WHERE user_id = ? AND account_id = ?;";
+        jdbcTemplate.update(sql, amount, target_id, account_id);
+    }
 
     @Override
     public void requestTEBucks(Account accountRequesting, BigDecimal amountRequested, int targetId){
@@ -153,7 +199,6 @@ public class JdbcAccountDao implements AccountDao{
                 amountRequested, LocalDate.now(), targetId, "Pending");
 
     }
-
 
     private Account mapRowToAccount(SqlRowSet rowSet){
         Account account = new Account();

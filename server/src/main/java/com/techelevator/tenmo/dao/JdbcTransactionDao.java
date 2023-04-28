@@ -23,8 +23,6 @@ public class JdbcTransactionDao implements TransactionDao {
 
     public List<Transaction> listTransactions(String username) {
         List<Transaction> transactionList = new ArrayList<>();
-        String sql = "SELECT transaction_id, transactions.account_id, amount, date_and_time, target_id, status FROM transactions JOIN account ON account.account_id = transactions.account_id JOIN tenmo_user as t ON t.user_id = account.user_id WHERE username = ?";
-
         String sql = "SELECT transaction_id, transactions.account_id, amount, date_and_time, target_id, status FROM " +
                 "transactions JOIN account ON account.account_id = transactions.account_id JOIN tenmo_user as t ON t.user_id = account.user_id WHERE username = ?";
 
@@ -113,15 +111,17 @@ public class JdbcTransactionDao implements TransactionDao {
         jdbcTemplate.update(sql, transactionId);
     }
 
+
     private Transaction mapRowToTransaction (SqlRowSet row) {
         Transaction transaction = new Transaction(
                 row.getInt("transaction_id"),
                 row.getInt("account_id"),
+                row.getInt("user_id"),
                 row.getBigDecimal("amount"),
-                row.getDate("date_and_time").toLocalDate(),
                 row.getInt("target_id"),
                 row.getString("status")
         );
         return transaction;
     }
+
 }

@@ -35,16 +35,23 @@ public class AccountController {
         return accountDao.getAccounts(principal);
 
     }
+    @ResponseStatus(HttpStatus.CREATED)
+    @RequestMapping(path = "/transfer", method = RequestMethod.POST)
+    public void createTransaction(@Valid @RequestBody Transaction transaction){
+        accountDao.transferTEBucks(transaction);
+        accountDao.addBal(transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount());
+        accountDao.decreaseBal(transaction.getTarget_id(), transaction.getAccount_id(), transaction.getAmount());
 
-    @RequestMapping(path = "/transfer", method = RequestMethod.PUT)
-    public Account transferBucks(@RequestParam(value = "target_id") int id, @RequestBody Account account, @RequestParam(value = "amount") BigDecimal amountToTransfer){
-        Account updatedAccount = accountDao.transferTEBucks(id, account, amountToTransfer);
-        if(updatedAccount == null){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "account id not found");
-        }
+//        if(updatedAccount == null){
+//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "account id not found");
+//        }
 
-        return updatedAccount;
     }
+//    @ResponseStatus(HttpStatus.CREATED)
+//    @RequestMapping(path = "/transfer", method = RequestMethod.POST)
+//    public void createTransaction(@RequestBody Transaction transaction) {
+//        accountDao.transfer(transaction);
+//    }
 
     @ResponseStatus(HttpStatus.CREATED)
     @RequestMapping(path = "/request", method = RequestMethod.POST)

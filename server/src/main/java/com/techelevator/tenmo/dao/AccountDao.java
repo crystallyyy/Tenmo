@@ -9,10 +9,15 @@ import java.util.List;
 
 public interface AccountDao {
     Account getAccount(Principal principal);
+    Account getAccount(int user_id);
     List<Account> getAccounts(Principal principal);
-    Account transferTEBucks(int id, Account account, BigDecimal amountToTransfer);
 
     public boolean createAccount(Account newAccount);
 
     void requestTEBucks(Account account, BigDecimal amount, int targetId);
+    public Transaction transferTEBucks(Transaction transaction);
+
+    void addBal(int user_id, int account_id, BigDecimal amount);
+    void decreaseBal(int target_id, int account_id, BigDecimal amount);
+
 }
