@@ -15,7 +15,7 @@ public interface AccountDao {
     public boolean createAccount(Account newAccount);
 
     void requestTEBucks(Account account, BigDecimal amount, int targetId);
-    public Transaction transferTEBucks(Transaction transaction);
+    public void transferTEBucks(Transaction transaction);
 
     void addBal(int user_id, int account_id, BigDecimal amount);
     void decreaseBal(int target_id, int account_id, BigDecimal amount);

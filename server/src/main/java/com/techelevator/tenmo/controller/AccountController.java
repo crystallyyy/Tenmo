@@ -23,6 +23,7 @@ public class AccountController {
     private AccountDao accountDao;
     private TransactionDao transactionDao;
     private Principal principal;
+    private static final BigDecimal ZERO = new BigDecimal("0.00");
 
 
     public AccountController(UserDao userDao, AccountDao accountDao) {
@@ -38,20 +39,18 @@ public class AccountController {
     @ResponseStatus(HttpStatus.CREATED)
     @RequestMapping(path = "/transfer", method = RequestMethod.POST)
     public void createTransaction(@Valid @RequestBody Transaction transaction){
-        accountDao.transferTEBucks(transaction);
-        accountDao.addBal(transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount());
-        accountDao.decreaseBal(transaction.getTarget_id(), transaction.getAccount_id(), transaction.getAmount());
-
-//        if(updatedAccount == null){
-//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "account id not found");
-//        }
+        if (transaction.getAmount().compareTo(ZERO) == 1) {
+            accountDao.transferTEBucks(transaction);
+            accountDao.decreaseBal(transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount());
+            //TODO: HOW do we get account ID for a target id
+            System.out.println(accountDao.getAccount(transaction.getTarget_id()).getAccount_id());
+            accountDao.addBal(transaction.getTarget_id(), accountDao.getAccount(transaction.getTarget_id()).getAccount_id(), transaction.getAmount());
+        } else {
+            throw new RuntimeException("Amount must be greater than 0");
+        }
 
     }
-//    @ResponseStatus(HttpStatus.CREATED)
-//    @RequestMapping(path = "/transfer", method = RequestMethod.POST)
-//    public void createTransaction(@RequestBody Transaction transaction) {
-//        accountDao.transfer(transaction);
-//    }
+
 
     @ResponseStatus(HttpStatus.CREATED)
     @RequestMapping(path = "/request", method = RequestMethod.POST)

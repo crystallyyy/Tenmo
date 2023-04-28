@@ -23,7 +23,7 @@ public class JdbcTransactionDao implements TransactionDao {
 
     public List<Transaction> listTransactions(String username) {
         List<Transaction> transactionList = new ArrayList<>();
-        String sql = "SELECT transaction_id, transactions.account_id, amount, date_and_time, target_id, status FROM " +
+        String sql = "SELECT transaction_id, transactions.account_id, transactions.user_id, amount, target_id, status FROM " +
                 "transactions JOIN account ON account.account_id = transactions.account_id JOIN tenmo_user as t ON t.user_id = account.user_id WHERE username = ?";
 
         try {
@@ -42,7 +42,7 @@ public class JdbcTransactionDao implements TransactionDao {
 
     public Transaction getTransaction(int transactionId) {
         Transaction transaction = null;
-        String sql = "SELECT transaction_id, account_id, amount, date_and_time, target_id, status FROM transactions WHERE transaction_id = ?;";
+        String sql = "SELECT transaction_id, account_id, user_id, amount, target_id, status FROM transactions WHERE transaction_id = ?;";
         try {
             SqlRowSet result = jdbcTemplate.queryForRowSet(sql, transactionId);
             if (result.next()) {
