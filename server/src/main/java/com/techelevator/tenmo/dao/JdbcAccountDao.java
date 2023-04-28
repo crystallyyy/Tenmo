@@ -41,7 +41,7 @@ public class JdbcAccountDao implements AccountDao{
     @Override
     public List<Account> getAccounts(Principal principal){
         List<Account> accountList = new ArrayList<>();
-        String sql = "SELECT * FROM account AS a " +
+        String sql = "SELECT account_id, a.user_id, balance, is_primary FROM account AS a " +
                 " JOIN tenmo_user AS tu ON a.user_id = tu.user_id " +
                 " WHERE username = ?;";
 
@@ -62,9 +62,9 @@ public class JdbcAccountDao implements AccountDao{
 
     public boolean createAccount(Account newAccount) {
 
-        String sql = "INSERT INTO account (user_id, balance) VALUES (?, ?) RETURNING account_id;";
+        String sql = "INSERT INTO account (user_id, balance, is_primary) VALUES (?, ?, ?) RETURNING account_id;";
         try {
-            int newAccId = jdbcTemplate.queryForObject(sql, Integer.class, newAccount.getUser_id(), newAccount.getBalance());
+            int newAccId = jdbcTemplate.queryForObject(sql, Integer.class, newAccount.getUser_id(), newAccount.getBalance(), newAccount.isIs_primary());
 
         } catch (CannotGetJdbcConnectionException e) {
             return false;
@@ -85,39 +85,24 @@ public class JdbcAccountDao implements AccountDao{
 //            return false;
 //
 //        }
-public Transaction getTransaction(int transactionId) {
-    Transaction transaction = null;
-    String sql = "SELECT transaction_id, account_id, user_id, amount, target_id, status FROM transactions WHERE transaction_id = ?;";
-    try {
-        SqlRowSet result = jdbcTemplate.queryForRowSet(sql, transactionId);
-        if (result.next()) {
-            transaction = mapRowToTransaction(result);
-        }
-    } catch (CannotGetJdbcConnectionException e) {
-        throw new DaoException("Unable to connect to server or database", e);
-    } catch (BadSqlGrammarException e) {
-        throw new DaoException("SQL syntax error", e);
+
+    public void transferTEBucks(Transaction transaction) {
+        //TODO: change parameters
+        String sql = "INSERT INTO transactions (user_id, account_id, amount, target_id, status) VALUES (?, ?, ?, ?, ?) RETURNING transaction_id;";
+        String sql2 = "INSERT INTO transactions(user_id, account_id, amount, target_id, status) VALUES (?, (SELECT account_id FROM account WHERE user_id = ? AND is_primary = true), ?, ?, ?) RETURNING transaction_id;";
+        try {
+            jdbcTemplate.queryForObject(sql, Integer.class, transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount(), transaction.getTarget_id(), transaction.getStatus());
+            jdbcTemplate.queryForObject(sql2, Integer.class, transaction.getTarget_id(), transaction.getTarget_id(), transaction.getAmount(), transaction.getUser_id(), transaction.getStatus());
+
+
+            } catch (CannotGetJdbcConnectionException e) {
+                throw new DaoException("Unable to connect ot server or db", e);
+            } catch (BadSqlGrammarException e) {
+                throw new DaoException("SQL syntax error", e);
+            } catch (DataIntegrityViolationException e) {
+                throw new DaoException("Data Integrity violation", e);
+            }
     }
-    return transaction;
-}
-//    public void transferTEBucks(Transaction transaction) {
-//        //TODO: change parameters
-//        Transaction newTransaction = null;
-//        String sql = "INSERT INTO transactions (user_id, account_id, amount, target_id, status) VALUES (?, ?, ?, ?, ?) RETURNING transaction_id;";
-//        try {
-//            int newTransactionId = jdbcTemplate.queryForObject(sql, Integer.class, transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount(), transaction.getTarget_id(), transaction.getStatus());
-//
-//            newTransaction = getTransaction(newTransactionId);
-//
-//        } catch (CannotGetJdbcConnectionException e) {
-//            System.out.println("Errpr 1");
-//
-//        } catch (BadSqlGrammarException e) {
-//            System.out.println("Error 2");
-//
-//        }
-////            return newTransaction;
-//    }
 
     @Override
     public void addBal(int target_id, int account_id, BigDecimal amount) {
@@ -133,56 +118,6 @@ public Transaction getTransaction(int transactionId) {
         jdbcTemplate.update(sql, amount, user_id, account_id);
     }
 
-    public Account transferTEBucks(Transaction transaction){
-
-        Account userAccount = null;
-        String sql0 = "UPDATE account SET balance = ? " +
-                "WHERE user_id = ?;";
-
-        BigDecimal currentBalance = getAccountBalanceById(transaction.getUser_id());
-
-        if(currentBalance.compareTo(transaction.getAmount()) != -1 && transaction.getUser_id() != transaction.getTarget_id()) {
-
-            try {
-                jdbcTemplate.update(sql0, currentBalance.subtract(transaction.getAmount()),transaction.getUser_id());
-                userAccount = getAccount(transaction.getUser_id());
-            } catch (CannotGetJdbcConnectionException e) {
-                throw new DaoException("Unable to connect ot server or db", e);
-            } catch (BadSqlGrammarException e) {
-                throw new DaoException("SQL syntax error", e);
-            } catch (DataIntegrityViolationException e) {
-                throw new DaoException("Data Integrity violation", e);
-            }
-        } else {
-            //TODO: create exception
-            throw new TenmoException("Insufficient funds or invalid user ID");
-        }
-
-        BigDecimal receiverBalance = getAccountBalanceById(transaction.getTarget_id());
-        try {
-            int numRows = jdbcTemplate.update(sql0, receiverBalance.add(transaction.getAmount()), transaction.getTarget_id());
-
-        } catch (CannotGetJdbcConnectionException e) {
-            throw new DaoException("Unable to connect ot server or db", e);
-        } catch (BadSqlGrammarException e) {
-            throw new DaoException("SQL syntax error", e);
-        } catch (DataIntegrityViolationException e) {
-            throw new DaoException("Data Integrity violation yo!", e);
-        }
-
-        String sql4 = "INSERT INTO transactions (user_id, account_id, amount, target_id, status) " +
-                "VALUES (?, ?, ?, ?, ?) RETURNING transaction_id;";
-
-        String sql = "SELECT account_id FROM account WHERE user_id = ?;";
-        SqlRowSet result = jdbcTemplate.queryForRowSet(sql, transaction.getTarget_id());
-        int accountId2 = result.getInt("account_id");
-        int transactionId = jdbcTemplate.queryForObject(sql4, int.class, transaction.getUser_id(), transaction.getAccount_id(),
-                transaction.getAmount(), transaction.getTarget_id(), transaction.getStatus());
-        int transactionId2 = jdbcTemplate.queryForObject(sql4, int.class, transaction.getTarget_id(), accountId2, transaction.getAmount(),
-                transaction.getTarget_id(), transaction.getStatus());
-
-        return userAccount;
-    }
 
 
     @Override
@@ -207,17 +142,7 @@ public Transaction getTransaction(int transactionId) {
         System.out.println("The user " + requestingUsername + " is requesting $" + transaction.getAmount() + " from user " + targetUsername );
     }
 
-    private Transaction mapRowToTransaction (SqlRowSet row) {
-        Transaction transaction = new Transaction(
-                row.getInt("transaction_id"),
-                row.getInt("account_id"),
-                row.getInt("user_id"),
-                row.getBigDecimal("amount"),
-                row.getInt("target_id"),
-                row.getString("status")
-        );
-        return transaction;
-    }
+
     private Account mapRowToAccount(SqlRowSet rowSet){
         Account account = new Account();
         account.setAccount_id(rowSet.getInt("account_id"));

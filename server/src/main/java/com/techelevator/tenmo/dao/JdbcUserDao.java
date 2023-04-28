@@ -17,6 +17,7 @@ public class JdbcUserDao implements UserDao {
 
     private JdbcTemplate jdbcTemplate;
     private static final BigDecimal DEFAULT_BALANCE = new BigDecimal("1000.00");
+    private static final int IS_PRIMARY = 1;
     public JdbcUserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -73,9 +74,9 @@ public class JdbcUserDao implements UserDao {
 
         //create account
 
-        String sql2 = "INSERT INTO account (user_id, balance) VALUES (?, ?) RETURNING account_id";
+        String sql2 = "INSERT INTO account (user_id, balance, is_primary) VALUES (?, ?, ?) RETURNING account_id";
         try {
-             Integer newAccountId = jdbcTemplate.queryForObject(sql2, Integer.class, newUserId, DEFAULT_BALANCE);
+             Integer newAccountId = jdbcTemplate.queryForObject(sql2, Integer.class, newUserId, DEFAULT_BALANCE, true);
         } catch (DataAccessException e) {
             return false;
         }
