@@ -78,6 +78,55 @@ public class JdbcAccountDao implements AccountDao{
         return true;
     }
 
+    public Transaction getTransaction(int transactionId) {
+
+        Transaction transaction = null;
+        String sql = "SELECT transaction_id, account_id, user_id, amount, target_id, status FROM transactions WHERE transaction_id = ?;";
+        try {
+        SqlRowSet result = jdbcTemplate.queryForRowSet(sql, transactionId);
+        if (result.next()) {
+            transaction = mapRowToTransaction(result);
+        }
+    } catch (CannotGetJdbcConnectionException e) {
+        throw new DaoException("Unable to connect to server or database", e);
+    } catch (BadSqlGrammarException e) {
+        throw new DaoException("SQL syntax error", e);
+    }
+    return transaction;
+}
+//    public void transferTEBucks(Transaction transaction) {
+//        //TODO: change parameters
+//        Transaction newTransaction = null;
+//        String sql = "INSERT INTO transactions (user_id, account_id, amount, target_id, status) VALUES (?, ?, ?, ?, ?) RETURNING transaction_id;";
+//        try {
+//            int newTransactionId = jdbcTemplate.queryForObject(sql, Integer.class, transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount(), transaction.getTarget_id(), transaction.getStatus());
+//
+//            newTransaction = getTransaction(newTransactionId);
+//
+//        } catch (CannotGetJdbcConnectionException e) {
+//            System.out.println("Errpr 1");
+//
+//        } catch (BadSqlGrammarException e) {
+//            System.out.println("Error 2");
+//
+//        }
+////            return newTransaction;
+//    }
+
+
+    @Override
+    public void addBal(int target_id, int account_id, BigDecimal amount) {
+        String sql = "UPDATE account SET balance = balance + ? " +
+                "WHERE user_id = ? AND account_id = ?;";
+        jdbcTemplate.update(sql, amount, target_id, account_id);
+    }
+
+    @Override
+    public void decreaseBal(int user_id, int account_id, BigDecimal amount) {
+        String sql = "UPDATE account SET balance =  balance - ? " +
+                "WHERE user_id = ? AND account_id = ?;";
+        jdbcTemplate.update(sql, amount, user_id, account_id);
+    }
 
     public Account transferTEBucks(Transaction transaction){
 
@@ -153,7 +202,17 @@ public class JdbcAccountDao implements AccountDao{
         System.out.println("The user " + requestingUsername + " is requesting $" + transaction.getAmount() + " from user " + targetUsername );
     }
 
-
+    private Transaction mapRowToTransaction (SqlRowSet row) {
+        Transaction transaction = new Transaction(
+                row.getInt("transaction_id"),
+                row.getInt("account_id"),
+                row.getInt("user_id"),
+                row.getBigDecimal("amount"),
+                row.getInt("target_id"),
+                row.getString("status")
+        );
+        return transaction;
+    }
     private Account mapRowToAccount(SqlRowSet rowSet){
         Account account = new Account();
         account.setAccount_id(rowSet.getInt("account_id"));

@@ -23,6 +23,7 @@ public class AccountController {
     private AccountDao accountDao;
     private TransactionDao transactionDao;
     private Principal principal;
+    private static final BigDecimal ZERO = new BigDecimal("0.00");
 
 
     public AccountController(UserDao userDao, AccountDao accountDao) {
@@ -36,20 +37,32 @@ public class AccountController {
 
     }
 
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    @RequestMapping(path = "/transfer", method = RequestMethod.PUT)
-    public Account transferBucks(@Valid @RequestBody Transaction transaction){
-        Account updatedAccount = accountDao.transferTEBucks(transaction);
-        if(updatedAccount == null){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    @ResponseStatus(HttpStatus.CREATED)
+    @RequestMapping(path = "/transfer", method = RequestMethod.POST)
+    public void createTransaction(@Valid @RequestBody Transaction transaction) {
+        if (transaction.getAmount().compareTo(ZERO) == 1) {
+            accountDao.transferTEBucks(transaction);
+            accountDao.decreaseBal(transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount());
+            //TODO: HOW do we get account ID for a target id
+            accountDao.addBal(transaction.getTarget_id(), accountDao.getAccount(transaction.getTarget_id()).getAccount_id(), transaction.getAmount());
+        } else {
+            throw new RuntimeException("Amount must be greater than 0");
+
+
         }
 
-        return updatedAccount;
     }
+    //    @ResponseStatus(HttpStatus.ACCEPTED)
+//    @RequestMapping(path = "/transfer", method = RequestMethod.PUT)
+//    public Account transferBucks(@Valid @RequestBody Transaction transaction){
+//        Account updatedAccount = accountDao.transferTEBucks(transaction);
+//        if(updatedAccount == null){
+//            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+//
+//        }
 
     @ResponseStatus(HttpStatus.CREATED)
     @RequestMapping(path = "/request", method = RequestMethod.POST)
-
     public void requestTransfer(@Valid @RequestBody Transaction transaction){
         accountDao.requestTEBucks(transaction);
     }
