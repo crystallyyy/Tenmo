@@ -200,6 +200,16 @@ public Transaction getTransaction(int transactionId) {
 
     }
 
+    private Transaction mapRowToTransaction (SqlRowSet row) {
+        Transaction transaction = new Transaction(
+                row.getInt("transaction_id"),
+                row.getInt("account_id"),
+                row.getInt("user_id"),
+                row.getBigDecimal("amount"),
+                row.getInt("target_id"),
+                row.getString("status")
+        );
+
     private Account mapRowToAccount(SqlRowSet rowSet){
         Account account = new Account();
         account.setAccount_id(rowSet.getInt("account_id"));
