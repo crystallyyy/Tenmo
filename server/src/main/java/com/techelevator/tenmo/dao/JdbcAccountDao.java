@@ -89,10 +89,11 @@ public class JdbcAccountDao implements AccountDao{
     public void transferTEBucks(Transaction transaction) {
         //TODO: change parameters
         String sql = "INSERT INTO transactions (user_id, account_id, amount, target_id, status) VALUES (?, ?, ?, ?, ?) RETURNING transaction_id;";
-        String sql2 = "INSERT INTO transactions(user_id, account_id, amount, target_id, status) VALUES (?, (SELECT account_id FROM account WHERE user_id = ? AND is_primary = true), ?, ?, ?) RETURNING transaction_id;";
+        String sql2 = "INSERT INTO transactions(user_id, account_id, amount, target_id, status) VALUES (?, (SELECT account_id FROM account WHERE user_id = ? AND is_primary = ?), ?, ?, ?) RETURNING transaction_id;";
         try {
             jdbcTemplate.queryForObject(sql, Integer.class, transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount(), transaction.getTarget_id(), transaction.getStatus());
-            jdbcTemplate.queryForObject(sql2, Integer.class, transaction.getTarget_id(), transaction.getTarget_id(), transaction.getAmount(), transaction.getUser_id(), transaction.getStatus());
+            System.out.println(transaction.getTarget_id());
+            jdbcTemplate.queryForObject(sql2, Integer.class, transaction.getTarget_id(), transaction.getTarget_id(), true, transaction.getAmount(), transaction.getUser_id(), transaction.getStatus());
 
 
             } catch (CannotGetJdbcConnectionException e) {
@@ -133,13 +134,17 @@ public class JdbcAccountDao implements AccountDao{
         //separate method for this?, return string?
         String sql3 = "SELECT username FROM tenmo_user WHERE user_id = ?;";
         SqlRowSet result1 = jdbcTemplate.queryForRowSet(sql3, transaction.getUser_id());
-        String requestingUsername = result1.getString("username");
-
+        if (result1.next()) {
+            String requestingUsername = result1.getString("username");
+        }
 
         SqlRowSet result2 = jdbcTemplate.queryForRowSet(sql3, transaction.getTarget_id());
-        String targetUsername = result2.getString("username");
+        if (result2.next()) {
+            String targetUsername = result2.getString("username");
 
-        System.out.println("The user " + requestingUsername + " is requesting $" + transaction.getAmount() + " from user " + targetUsername );
+
+        }
+//        System.out.println("The user " + requestingUsername + " is requesting $" + transaction.getAmount() + " from user " + targetUsername);
     }
 
 

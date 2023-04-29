@@ -41,10 +41,11 @@ public class AccountController {
     @RequestMapping(path = "/transfer", method = RequestMethod.POST)
     public void createTransaction(@Valid @RequestBody Transaction transaction) {
 
-        if (transaction.getAmount().compareTo(ZERO) == 1 && accountDao.getAccount(transaction.getUser_id()).getBalance().compareTo(transaction.getAmount()) == 1) {
+        if (transaction.getAmount().compareTo(ZERO) == 1 && accountDao.getAccount(transaction.getUser_id()).getBalance().compareTo(transaction.getAmount()) == 1 || accountDao.getAccount(transaction.getUser_id()).getBalance().compareTo(transaction.getAmount()) == 0) {
             accountDao.transferTEBucks(transaction);
             accountDao.decreaseBal(transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount());
             //TODO: HOW do we get account ID for a target id
+
             accountDao.addBal(transaction.getTarget_id(), accountDao.getAccount(transaction.getTarget_id()).getAccount_id(), transaction.getAmount());
         } else {
             throw new RuntimeException("Amount must be greater than 0");

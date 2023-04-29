@@ -48,10 +48,10 @@ public class TransactionController {
         return transactionDao.listTransactions(currentPrincipal);
     }
 
-    @RequestMapping(path = "transactions/filter", method = RequestMethod.GET)
-    public List<Transaction> getPendingTransactions(@RequestParam String status, Principal principal){
-        //TODO: do we need getPendingTransactions
-        return transactionDao.listTransactions(principal.getName());
+    @RequestMapping(path = "transactions/pending", method = RequestMethod.GET)
+    public List<Transaction> getPendingTransactions( Principal principal){
+
+        return null;
     }
 
     @RequestMapping(path = "/transactions/{id}", method = RequestMethod.GET)

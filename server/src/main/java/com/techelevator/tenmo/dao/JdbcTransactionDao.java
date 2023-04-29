@@ -58,13 +58,12 @@ public class JdbcTransactionDao implements TransactionDao {
         return transaction;
     }
 
-    //TODO: create handler method
-    public List<Transaction> getPendingTransactions(Principal principal){
+    public List<Transaction> getPendingTransactions(int userId){
         List<Transaction> pendingTransactions = new ArrayList<>();
-        String sql = "SELECT transaction_id, transactions.account_id, amount, date_and_time, target_id, status FROM " +
-                "transactions JOIN account ON account.account_id = transactions.account_id JOIN tenmo_user as t ON t.user_id = account.user_id WHERE username = ? AND status = 'Pending'";
+        String sql = "SELECT transaction_id, transactions.user_id, transactions.account_id, target_id, status FROM " +
+                "transactions JOIN account ON account.account_id = transactions.account_id JOIN tenmo_user as t ON t.user_id = account.user_id WHERE user_id= ? AND status = 'Pending';";
         try {
-            SqlRowSet results = jdbcTemplate.queryForRowSet(sql, principal.getName());
+            SqlRowSet results = jdbcTemplate.queryForRowSet(sql, userId);
             while (results.next()){
                 Transaction transaction = mapRowToTransaction(results);
                pendingTransactions.add(transaction);
