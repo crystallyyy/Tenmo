@@ -7,6 +7,7 @@ import com.techelevator.tenmo.dao.JdbcUserDao;
 
 import com.techelevator.tenmo.model.Transaction;
 import com.techelevator.tenmo.model.User;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,28 +32,29 @@ public class JdbcTransactionDaoTest extends BaseDaoTests {
 
 
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        sut = new JdbcTransactionDao(jdbcTemplate);
-
 
         sut = new JdbcTransactionDao(jdbcTemplate);
         user = new JdbcUserDao(jdbcTemplate);
         account = new JdbcAccountDao(jdbcTemplate);
-        testAccount = new Account(2003,1002, new BigDecimal("500.00"),true);
         test = new Transaction(3001,1001,2001, new BigDecimal("200.00"), 1002, "Approved");
+
+
+        user.create("Tester1", "password");
+        user.create("Tester2", "password");
+
     }
+    //TODO: CURRENTLY THE TESTS ONLY WORK ONE BY ONE I HAVE NO IDEA HOW TO FIX THIS
     @Test
     public void getTransactions_regular_test() {
-        user.create("Tester1", "password");
-        Transaction expected = sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200.00"), 1002, "Approved"));
-        assertTransactionsMatch(sut.getTransaction(3001), expected);
-    }
 
+        Transaction expected = sut.createTransaction(test,"Tester1");
+        assertTransactionsMatch(sut.getTransaction(3001,"Tester1"), expected);
+    }
     @Test
     public void listTransactions_one_in_list() {
         List<Transaction> transactionExpectedList = new ArrayList<>();
         transactionExpectedList.add(test);
-        user.create("Tester1", "password");
-        Transaction actualTransaction = sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"));
+        Transaction actualTransaction = sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"),"Tester1");
         List<Transaction> actualList = sut.listTransactions("Tester1");
         assertTransactionsMatch(transactionExpectedList.get(0), actualList.get(0));
 
@@ -64,11 +66,10 @@ public class JdbcTransactionDaoTest extends BaseDaoTests {
         transactionExpectedList.add(new Transaction(3002,1001,2001, new BigDecimal("200"), 1002, "Approved"));
         transactionExpectedList.add(new Transaction(3003,1001,2001, new BigDecimal("200"), 1002, "Approved"));
         transactionExpectedList.add(new Transaction(3004,1001,2001, new BigDecimal("200"), 1002, "Approved"));
-        user.create("Tester1", "password");
-        sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"));
-        sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"));
-        sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"));
-        sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"));
+        sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"),"Tester1");
+        sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"),"Tester1");
+        sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"),"Tester1");
+        sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"),"Tester1");
         List<Transaction> actualList = sut.listTransactions("Tester1");
         for (int i = 0; i < transactionExpectedList.size(); i++) {
             assertTransactionsMatch(transactionExpectedList.get(i), actualList.get(i));
@@ -79,11 +80,10 @@ public class JdbcTransactionDaoTest extends BaseDaoTests {
     @Test
     public void getPendingTransactions_normal_list() {
         List<Transaction> transactionExpectedList = new ArrayList<>();
-        user.create("Tester1", "password");
         transactionExpectedList.add(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Pending"));
         transactionExpectedList.add(new Transaction(3002,1001,2001, new BigDecimal("200"), 1002, "Pending"));
-        sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Pending"));
-        sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Pending"));
+        sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Pending"),"Tester1");
+        sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Pending"),"Tester1");
         List<Transaction> actualList = sut.getPendingTransactions("Tester1");
         assertEquals(transactionExpectedList.size(), actualList.size());
         for (int i = 0; i < actualList.size(); i++) {
@@ -94,29 +94,25 @@ public class JdbcTransactionDaoTest extends BaseDaoTests {
     @Test
     public void getPendingTransactions_none_list() {
         List<Transaction> transactionExpectedList = new ArrayList<>();
-        user.create("Tester1", "password");
-        sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"));
-        sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"));
+        sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"),"Tester1");
+        sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"),"Tester1");
 
         assertEquals(transactionExpectedList.size(), sut.getPendingTransactions("Tester1").size());
     }
 
     @Test
     public void approveRequest_changes_to_approve() {
-        user.create("Tester1", "password");
-        user.create("Tester2", "password");
         Transaction testPend = new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Pending");
         Transaction expectedApproval = new Transaction(3002, 1002, 2002, new BigDecimal("200.00"), 1002, "Approved");
         account.requestTEBucks(testPend);
-        sut.approveRequest(sut.getTransaction(3002),"Tester2");
-        assertTransactionsMatch(expectedApproval, sut.getTransaction(3002));
+        sut.approveRequest(sut.getTransaction(3002,"Tester2"),"Tester2");
+        assertTransactionsMatch(expectedApproval, sut.getTransaction(3002,"Tester2"));
 
 
     }
     @Test
     public void denyRequest_should_delete_transaction() {
-        user.create("Tester1", "password");
-        user.create("Tester2", "password");
+
         Transaction testPend = new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Pending");
         account.requestTEBucks(testPend);
         sut.denyRequest(3002,"Tester2");

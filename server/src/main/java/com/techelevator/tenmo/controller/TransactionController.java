@@ -57,10 +57,13 @@ public class TransactionController {
     @RequestMapping(path = "/transactions/{id}", method = RequestMethod.GET)
     public Transaction getTransaction(@PathVariable int id, Principal principal) {
 
-        return transactionDao.getTransaction(id);
+        return transactionDao.getTransaction(id, principal.getName());
         //TODO: check for userID
     }
-
+    @RequestMapping(path = "/createtransaction", method = RequestMethod.POST)
+    public void createTransaction(@RequestBody Transaction transaction, Principal principal) {
+        transactionDao.createTransaction(transaction, principal.getName());
+    }
     @RequestMapping(path = "/approverequest", method = RequestMethod.PUT)
     public void approveRequest(@RequestBody Transaction transaction, Principal principal){
         transactionDao.approveRequest(transaction, principal.getName());
@@ -75,7 +78,6 @@ public class TransactionController {
     @RequestMapping(path = "/request/{transaction_id}", method = RequestMethod.DELETE)
     public void denyRequest(@PathVariable(value = "transaction_id") int transaction_id, Principal principal){
         transactionDao.denyRequest(transaction_id, principal.getName());
-        // TODO: currently deletes any transaction, not user_id specified
     }
 
 }

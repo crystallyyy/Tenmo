@@ -40,7 +40,7 @@ public class AccountController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @RequestMapping(path = "/transfer", method = RequestMethod.POST)
-    public void createTransaction(@Valid @RequestBody Transaction transaction) {
+    public void createTransaction(@Valid @RequestBody Transaction transaction, Principal principal) {
 
         if (transaction.getAmount().compareTo(ZERO) == 1 && accountDao.getAccount(transaction.getUser_id()).getBalance().compareTo(transaction.getAmount()) == 1 || accountDao.getAccount(transaction.getUser_id()).getBalance().compareTo(transaction.getAmount()) == 0) {
             accountDao.transferTEBucks(transaction);

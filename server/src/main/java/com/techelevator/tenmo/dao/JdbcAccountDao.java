@@ -86,12 +86,10 @@ public class JdbcAccountDao implements AccountDao{
             userId = result.getInt("user_id");
         }
         String sqlAccountUser = "SELECT tenmo_user.user_id FROM tenmo_user JOIN account ON tenmo_user.user_id = account.user_id WHERE account_id = ?;";
-        System.out.println("**********************************************************************************************"+getAccount(newAccount.getUser_id()).getAccount_id());
         result = jdbcTemplate.queryForRowSet(sqlAccountUser, getAccount(newAccount.getUser_id()).getAccount_id());
         if (result.next()) {
             accountUserId = result.getInt("user_id");
         }
-        System.out.println(accountUserId);
         if (userId == accountUserId) {
             String sql = "INSERT INTO account (user_id, balance, is_primary) VALUES (?, ?, ?) RETURNING account_id;";
 
