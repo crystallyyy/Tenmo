@@ -18,7 +18,7 @@ public interface AccountDao {
     void addBal(int user_id, int account_id, BigDecimal amount);
     void decreaseBal(int target_id, int account_id, BigDecimal amount);
 
-
+    Account getPrimaryAccount(int id);
 
     void requestTEBucks(Transaction transaction);
 }

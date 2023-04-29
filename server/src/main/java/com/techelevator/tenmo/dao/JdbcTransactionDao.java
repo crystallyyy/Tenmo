@@ -1,6 +1,7 @@
 package com.techelevator.tenmo.dao;
 
 import com.techelevator.tenmo.exception.DaoException;
+import com.techelevator.tenmo.exception.TenmoException;
 import com.techelevator.tenmo.model.Transaction;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -14,10 +15,12 @@ import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Component
 public class JdbcTransactionDao implements TransactionDao {
     private JdbcTemplate jdbcTemplate;
+    List<Transaction> transactions = new ArrayList<>();
 
     public JdbcTransactionDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -59,12 +62,19 @@ public class JdbcTransactionDao implements TransactionDao {
     }
 
     //TODO: create handler method
-    public List<Transaction> getPendingTransactions(Principal principal){
+    public List<Transaction> getPendingTransactions(String name){
         List<Transaction> pendingTransactions = new ArrayList<>();
-        String sql = "SELECT transaction_id, transactions.account_id, amount, date_and_time, target_id, status FROM " +
-                "transactions JOIN account ON account.account_id = transactions.account_id JOIN tenmo_user as t ON t.user_id = account.user_id WHERE username = ? AND status = 'Pending'";
+        int userId = 0;
+        String sql = "SELECT transaction_id, transactions.user_id, transactions.account_id, amount, target_id, status FROM " +
+                "transactions JOIN account ON account.account_id = transactions.account_id JOIN tenmo_user as t ON t.user_id = account.user_id WHERE transactions.user_id = ? AND status = 'Pending'";
+
+        String sql1 = "SELECT user_id FROM tenmo_user WHERE username = ?;";
+        SqlRowSet result = jdbcTemplate.queryForRowSet(sql1, name);
+        if(result.next()){
+            userId = result.getInt("user_id");
+        }
         try {
-            SqlRowSet results = jdbcTemplate.queryForRowSet(sql, principal.getName());
+            SqlRowSet results = jdbcTemplate.queryForRowSet(sql, userId);
             while (results.next()){
                 Transaction transaction = mapRowToTransaction(results);
                pendingTransactions.add(transaction);
@@ -78,6 +88,8 @@ public class JdbcTransactionDao implements TransactionDao {
         return pendingTransactions;
     }
 
+
+
     public Transaction createTransaction(Transaction transaction){
         Transaction newTransaction = null;
         String sql = "INSERT INTO transactions (user_id, account_id, amount, target_id, status) " +
@@ -88,37 +100,44 @@ public class JdbcTransactionDao implements TransactionDao {
         return newTransaction;
     }
 
-    public Transaction approveRequest(int transactionId){
-        Transaction transactionApproved = getTransaction(transactionId);
-
+    public void approveRequest(Transaction transaction, String username){
+        int userId =0;
+        String sql = "SELECT user_id FROM tenmo_user WHERE username = ?;";
+        SqlRowSet result = jdbcTemplate.queryForRowSet(sql, username);
+        if(result.next()) {
+            userId = result.getInt("user_id");
+        }
+        System.out.println(userId);
         String sql1 = "UPDATE transactions SET status = ? " +
-                "WHERE transaction_id = ?;";
+                "WHERE transaction_id = ? ;";
+        String sql2 = "UPDATE transactions SET status = ? " +
+                "WHERE transaction_id = ? - 1;";
 
-        jdbcTemplate.update(sql1, "Approved", transactionId);
+        jdbcTemplate.update(sql1, "Approved", transaction.getTransaction_id());
+        jdbcTemplate.update(sql2, "Approved", transaction.getTransaction_id());
 
-        String sql2 = "UPDATE account SET balance = ? " +
-                "WHERE user_id = ?;";
-        String sql3 = "SELECT balance FROM account WHERE user_id = ?;";
-
-
-        SqlRowSet result = jdbcTemplate.queryForRowSet(sql3, transactionApproved.getTarget_id());
-        BigDecimal currentBalance = result.getBigDecimal("balance");
-
-        jdbcTemplate.update(sql2,currentBalance.subtract(transactionApproved.getAmount()), transactionApproved.getTarget_id());
-
-        SqlRowSet results = jdbcTemplate.queryForRowSet(sql3, transactionApproved.getUser_id());
-        BigDecimal currentBalance2 = results.getBigDecimal("balance");
-
-        jdbcTemplate.update(sql3, currentBalance2.add(transactionApproved.getAmount()), transactionApproved.getUser_id());
 
         //TODO: consider sout to conceal information in transaction
-        return transactionApproved;
+
     }
 
-    public void denyRequest(int transactionId){
-        String sql =  "DELETE FROM transactions WHERE transaction_id = ?;";
-        jdbcTemplate.update(sql, transactionId);
-        //TODO: delete from sending account transactions; maybe use transaction_id - 1?
+    public void denyRequest(int transactionId, String name){
+        int userId = 0;
+        String sql1 = "SELECT user_id FROM tenmo_user WHERE username = ?;";
+        SqlRowSet result = jdbcTemplate.queryForRowSet(sql1, name);
+        if(result.next()){
+            userId = result.getInt("user_id");
+        }
+        String sql =  "DELETE FROM transactions WHERE transaction_id = ? AND target_id = ? AND status = 'Pending';";
+        try {
+            jdbcTemplate.update(sql, transactionId, userId);
+            //TODO: delete from sending account transactions; maybe use transaction_id - 1?
+            // throw tenmoException if trying to delete approved transaction
+        } catch(Exception e){
+            throw new TenmoException("You are not authorized to deny this request.");
+        }
+        String sql2 = "DELETE FROM transactions WHERE transaction_id = ? - 1;";
+         jdbcTemplate.update(sql2, transactionId);
     }
 
 
@@ -132,6 +151,12 @@ public class JdbcTransactionDao implements TransactionDao {
                 row.getString("status")
         );
         return transaction;
+    }
+
+
+    static private boolean emptyString(String s) {
+        // Check if a string is null or empty
+        return (s == null || s.trim().length() == 0);
     }
 
 }

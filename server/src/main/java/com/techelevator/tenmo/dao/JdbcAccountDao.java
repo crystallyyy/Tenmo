@@ -38,6 +38,18 @@ public class JdbcAccountDao implements AccountDao{
         return account;
     }
 
+    public Account getPrimaryAccount(int id){
+        Account account = null;
+        String sql = "SELECT * FROM account " +
+                "WHERE user_id = ? AND is_primary = true;";
+
+        SqlRowSet result = jdbcTemplate.queryForRowSet(sql, id);
+        if (result.next()) {
+            account = mapRowToAccount(result);
+        }
+        return account;
+    }
+
     @Override
     public List<Account> getAccounts(Principal principal){
         List<Account> accountList = new ArrayList<>();
@@ -105,93 +117,43 @@ public class JdbcAccountDao implements AccountDao{
     @Override
     public void addBal(int target_id, int account_id, BigDecimal amount) {
         String sql = "UPDATE account SET balance = balance + ? " +
-                "WHERE user_id = ? AND account_id = ?;";
+                "WHERE user_id = ? AND account_id = ? AND is_primary = true;";
         jdbcTemplate.update(sql, amount, target_id, account_id);
     }
 
     @Override
     public void decreaseBal(int user_id, int account_id, BigDecimal amount) {
         String sql = "UPDATE account SET balance =  balance - ? " +
-                "WHERE user_id = ? AND account_id = ?;";
+                "WHERE user_id = ? AND account_id = ? AND is_primary = true;";
         jdbcTemplate.update(sql, amount, user_id, account_id);
     }
-
-//    public Account transferTEBucks(Transaction transaction){
-//
-//        Account userAccount = null;
-//        String sql0 = "UPDATE account SET balance = ? " +
-//                "WHERE user_id = ?;";
-//
-//        BigDecimal currentBalance = getAccount(transaction.getUser_id()).getBalance();
-//        System.out.println(currentBalance);
-//        System.out.println(transaction.getAmount());
-//        System.out.println(currentBalance.compareTo(transaction.getAmount()));
-//        if(currentBalance.compareTo(transaction.getAmount()) != -1 && transaction.getUser_id() != transaction.getTarget_id()) {
-//
-//            try {
-//                jdbcTemplate.update(sql0, currentBalance.subtract(transaction.getAmount()),transaction.getUser_id());
-//                userAccount = getAccount(transaction.getUser_id());
-//            } catch (CannotGetJdbcConnectionException e) {
-//                throw new DaoException("Unable to connect ot server or db", e);
-//            } catch (BadSqlGrammarException e) {
-//                throw new DaoException("SQL syntax error", e);
-//            } catch (DataIntegrityViolationException e) {
-//                throw new DaoException("Data Integrity violation", e);
-//            }
-//        } else {
-//            //TODO: create exception
-//            throw new TenmoException("Insufficient funds or invalid user ID");
-//        }
-//
-//        BigDecimal receiverBalance = getAccountBalanceById(transaction.getTarget_id());
-//        try {
-//            int numRows = jdbcTemplate.update(sql0, receiverBalance.add(transaction.getAmount()), transaction.getTarget_id());
-//
-//        } catch (CannotGetJdbcConnectionException e) {
-//            throw new DaoException("Unable to connect ot server or db", e);
-//        } catch (BadSqlGrammarException e) {
-//            throw new DaoException("SQL syntax error", e);
-//        } catch (DataIntegrityViolationException e) {
-//            throw new DaoException("Data Integrity violation yo!", e);
-//        }
-//
-//        String sql4 = "INSERT INTO transactions (user_id, account_id, amount, target_id, status) " +
-//                "VALUES (?, ?, ?, ?, ?) RETURNING transaction_id;";
-//
-//        String sql = "SELECT account_id FROM account WHERE user_id = ?;";
-//        SqlRowSet result = jdbcTemplate.queryForRowSet(sql, transaction.getTarget_id());
-//
-//        if(result.next() ) {
-//            int accountId2 = result.getInt("account_id");
-//            int transactionId = jdbcTemplate.queryForObject(sql4, int.class, transaction.getUser_id(), transaction.getAccount_id(),
-//                    transaction.getAmount(), transaction.getTarget_id(), transaction.getStatus());
-//            int transactionId2 = jdbcTemplate.queryForObject(sql4, int.class, transaction.getTarget_id(), accountId2, transaction.getAmount(),
-//                    transaction.getTarget_id(), transaction.getStatus());
-//        }
-//        return userAccount;
-//    }
 
 
     @Override
     public void requestTEBucks(Transaction transaction){
+        String requestingUsername;
+        String targetUsername;
         String sql1 = "INSERT INTO transactions (user_id, account_id, amount, target_id, status) " +
                     "VALUES (?, ?, ?, ?, ?) RETURNING transaction_id;";
 
         int transactionId1 = jdbcTemplate.queryForObject(sql1, int.class,  transaction.getUser_id(), transaction.getAccount_id(),
                 transaction.getAmount(), transaction.getTarget_id(), "Pending");
-        int transactionId2 = jdbcTemplate.queryForObject(sql1, int.class, transaction.getTarget_id(), transaction.getAccount_id(),
+        int transactionId2 = jdbcTemplate.queryForObject(sql1, int.class, transaction.getTarget_id(), getAccount(transaction.getTarget_id()).getAccount_id(),
                 transaction.getAmount(), transaction.getTarget_id(), "Pending");
 
+        System.out.println(getAccount(transaction.getTarget_id()).getAccount_id());
         //separate method for this?, return string?
         String sql3 = "SELECT username FROM tenmo_user WHERE user_id = ?;";
         SqlRowSet result1 = jdbcTemplate.queryForRowSet(sql3, transaction.getUser_id());
-        String requestingUsername = result1.getString("username");
-
-
         SqlRowSet result2 = jdbcTemplate.queryForRowSet(sql3, transaction.getTarget_id());
-        String targetUsername = result2.getString("username");
 
-        System.out.println("The user " + requestingUsername + " is requesting $" + transaction.getAmount() + " from user " + targetUsername );
+        if(result1.next()) {
+            requestingUsername = result1.getString("username");
+        }
+        if(result2.next()){
+            targetUsername = result2.getString("username");
+        }
+      //  System.out.println("The user " + requestingUsername + " is requesting $" + transaction.getAmount() + " from user " + targetUsername );
     }
 
 
@@ -200,7 +162,7 @@ public class JdbcAccountDao implements AccountDao{
         account.setAccount_id(rowSet.getInt("account_id"));
         account.setUser_id(rowSet.getInt("user_id"));
         account.setBalance(rowSet.getBigDecimal("balance"));
-
+        account.setIs_primary(rowSet.getBoolean("is_primary"));
         return account;
     }
 }

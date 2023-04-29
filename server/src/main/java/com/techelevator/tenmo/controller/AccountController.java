@@ -46,7 +46,7 @@ public class AccountController {
             accountDao.transferTEBucks(transaction);
             accountDao.decreaseBal(transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount());
             //TODO: HOW do we get account ID for a target id
-            accountDao.addBal(transaction.getTarget_id(), accountDao.getAccount(transaction.getTarget_id()).getAccount_id(), transaction.getAmount());
+            accountDao.addBal(transaction.getTarget_id(), accountDao.getPrimaryAccount(transaction.getTarget_id()).getAccount_id(), transaction.getAmount());
         } else {
             throw new RuntimeException("Amount must be greater than 0");
 
