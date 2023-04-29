@@ -51,18 +51,7 @@ CREATE TABLE transactions (
 	CONSTRAINT fk_transactions_account FOREIGN KEY (account_id) REFERENCES account (account_id),
 	CONSTRAINT chk_amount CHECK (amount > cast(0 as money))
 );
+SELECT * FROM tenmo_user;
 
 COMMIT;
-
-INSERT INTO tenmo_user (username, password_hash) VALUES ('dumbass', 'dumbass123');
-INSERT INTO account (user_id, balance) VALUES ((SELECT user_id FROM tenmo_user WHERE username = 'dumbass'), 1000);
-INSERT INTO transactions (account_id, amount, date_and_time, target_id, status) VALUES ((SELECT account_id from account JOIN tenmo_user as t ON t.user_id = account.user_id WHERE username = 'dumbass'), 500, '04/26/2023', 5, DEFAULT);
-
-INSERT INTO account (user_id, balance) VALUES ((SELECT user_id FROM tenmo_user WHERE username = 'bobert'), 1000);
-INSERT INTO transactions (account_id, amount, date_and_time, target_id, status) VALUES ((SELECT account_id from account JOIN tenmo_user as t ON t.user_id = account.user_id WHERE username = 'bobert'), 500, '04/26/2023', 5, DEFAULT);
-INSERT INTO transactions (account_id, amount, date_and_time, target_id, status) VALUES ((SELECT account_id from account JOIN tenmo_user as t ON t.user_id = account.user_id WHERE username = 'bobert'), 700, '04/26/2023', 5, DEFAULT);
-
-SELECT * FROM account
-SELECT * FROM transactions;
-SELECT tenmo_user.user_id FROM tenmo_user JOIN account ON tenmo_user.user_id = account.user_id WHERE account_id = 2003;
 

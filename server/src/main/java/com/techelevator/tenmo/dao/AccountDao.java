@@ -11,14 +11,14 @@ public interface AccountDao {
     Account getAccount(int user_id);
     List<Account> getAccounts(Principal principal);
 
-    public boolean createAccount(Account newAccount);
+    public boolean createAccount(Account newAccount, String username);
 
     public void transferTEBucks(Transaction transaction);
 
     void addBal(int user_id, int account_id, BigDecimal amount);
     void decreaseBal(int target_id, int account_id, BigDecimal amount);
 
-
+    Account getPrimaryAccount(int id);
 
     void requestTEBucks(Transaction transaction);
 }

@@ -37,6 +37,7 @@ public class AccountController {
 
     }
 
+
     @ResponseStatus(HttpStatus.CREATED)
     @RequestMapping(path = "/transfer", method = RequestMethod.POST)
     public void createTransaction(@Valid @RequestBody Transaction transaction) {
@@ -44,34 +45,34 @@ public class AccountController {
         if (transaction.getAmount().compareTo(ZERO) == 1 && accountDao.getAccount(transaction.getUser_id()).getBalance().compareTo(transaction.getAmount()) == 1 || accountDao.getAccount(transaction.getUser_id()).getBalance().compareTo(transaction.getAmount()) == 0) {
             accountDao.transferTEBucks(transaction);
             accountDao.decreaseBal(transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount());
-            //TODO: HOW do we get account ID for a target id
 
-            accountDao.addBal(transaction.getTarget_id(), accountDao.getAccount(transaction.getTarget_id()).getAccount_id(), transaction.getAmount());
+
+            accountDao.addBal(transaction.getTarget_id(), accountDao.getPrimaryAccount(transaction.getTarget_id()).getAccount_id(), transaction.getAmount());
         } else {
-            throw new RuntimeException("Amount must be greater than 0");
+            throw new RuntimeException("Amount must be greater than 0 and you must have enough money!");
 
 
         }
 
     }
-    //    @ResponseStatus(HttpStatus.ACCEPTED)
-//    @RequestMapping(path = "/transfer", method = RequestMethod.PUT)
-//    public Account transferBucks(@Valid @RequestBody Transaction transaction){
-//        Account updatedAccount = accountDao.transferTEBucks(transaction);
-//        if(updatedAccount == null){
-//            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-//
-//        }
 
     @ResponseStatus(HttpStatus.CREATED)
     @RequestMapping(path = "/request", method = RequestMethod.POST)
     public void requestTransfer(@Valid @RequestBody Transaction transaction){
-        accountDao.requestTEBucks(transaction);
+        //Cannot Request from same user
+        if (transaction.getUser_id() != transaction.getTarget_id()) {
+            accountDao.requestTEBucks(transaction);
+        } else {
+            throw new RuntimeException("Please input a different target user!");
+        }
+
     }
 
     @ResponseStatus(HttpStatus.CREATED)
     @RequestMapping(path = "/create", method = RequestMethod.POST)
-    public boolean create(@Valid @RequestBody Account account) {
-        return accountDao.createAccount(account);
+    public boolean create(@Valid @RequestBody Account account, Principal principal) {
+        //User_id must be the one logged in to create account
+
+        return accountDao.createAccount(account, principal.getName());
     }
 }

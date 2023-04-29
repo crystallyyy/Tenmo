@@ -9,7 +9,8 @@ public interface TransactionDao {
     public List<Transaction> listTransactions(String username);
 
     public Transaction getTransaction(int transactionId);
-    List<Transaction> getPendingTransactions(int userId);
-    public Transaction approveRequest(int transactionId);
-    public void denyRequest(int transactionId);
+
+    public void approveRequest(Transaction transaction, String username);
+    public void denyRequest(int transactionId, String name);
+    public List<Transaction> getPendingTransactions(String name);
 }
