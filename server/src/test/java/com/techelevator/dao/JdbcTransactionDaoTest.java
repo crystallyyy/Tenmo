@@ -11,10 +11,14 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import java.math.BigDecimal;
 
 import java.math.RoundingMode;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +34,6 @@ public class JdbcTransactionDaoTest extends BaseDaoTests {
     @Before
     public void setUp() {
 
-
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
         sut = new JdbcTransactionDao(jdbcTemplate);
@@ -43,18 +46,19 @@ public class JdbcTransactionDaoTest extends BaseDaoTests {
         user.create("Tester2", "password");
 
     }
-    //TODO: CURRENTLY THE TESTS ONLY WORK ONE BY ONE I HAVE NO IDEA HOW TO FIX THIS
+    //TODO: CURRENTLY THE TESTS ONLY WORK ONE BY ONE I HAVE NO IDEA HOW TO FIX THIS, SOME flaw w/ .create transaction method continuing to increment the user_id
     @Test
-    public void getTransactions_regular_test() {
+    public void getTransactions_regular_test() throws SQLException {
 
         Transaction expected = sut.createTransaction(test,"Tester1");
         assertTransactionsMatch(sut.getTransaction(3001,"Tester1"), expected);
     }
     @Test
-    public void listTransactions_one_in_list() {
+    public void listTransactions_one_in_list() throws SQLException {
+
         List<Transaction> transactionExpectedList = new ArrayList<>();
         transactionExpectedList.add(test);
-        Transaction actualTransaction = sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"),"Tester1");
+        Transaction actualTransaction = sut.createTransaction(new Transaction(3001,test.getUser_id(),2001, new BigDecimal("200"), 1002, "Approved"),"Tester1");
         List<Transaction> actualList = sut.listTransactions("Tester1");
         assertTransactionsMatch(transactionExpectedList.get(0), actualList.get(0));
 
@@ -97,7 +101,7 @@ public class JdbcTransactionDaoTest extends BaseDaoTests {
         sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"),"Tester1");
         sut.createTransaction(new Transaction(3001,1001,2001, new BigDecimal("200"), 1002, "Approved"),"Tester1");
 
-        assertEquals(transactionExpectedList.size(), sut.getPendingTransactions("Tester1").size());
+        assertEquals(0, sut.getPendingTransactions("Tester1").size());
     }
 
     @Test

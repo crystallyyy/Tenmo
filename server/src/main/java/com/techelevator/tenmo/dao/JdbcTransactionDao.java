@@ -121,7 +121,7 @@ public class JdbcTransactionDao implements TransactionDao {
                     transaction.getTarget_id(), transaction.getStatus());
             newTransaction = getTransaction(transactionId, username);
         } else {
-            throw new TenmoException("You can only add transactions to your user accounts!" + userId + " did not match " + transaction.getUser_id());
+            throw new TenmoException("You can only add transactions to your user accounts!");
         }
         return newTransaction;
     }

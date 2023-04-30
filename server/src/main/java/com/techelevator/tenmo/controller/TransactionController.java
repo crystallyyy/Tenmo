@@ -60,6 +60,7 @@ public class TransactionController {
         return transactionDao.getTransaction(id, principal.getName());
         //TODO: check for userID
     }
+    @ResponseStatus(HttpStatus.CREATED)
     @RequestMapping(path = "/createtransaction", method = RequestMethod.POST)
     public void createTransaction(@RequestBody Transaction transaction, Principal principal) {
         transactionDao.createTransaction(transaction, principal.getName());
