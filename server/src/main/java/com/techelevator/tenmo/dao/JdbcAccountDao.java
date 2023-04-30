@@ -51,32 +51,23 @@ public class JdbcAccountDao implements AccountDao{
     }
 
     @Override
-    public List<Account> getAccounts(Principal principal){
+    public List<Account> getAccounts(String username){
         List<Account> accountList = new ArrayList<>();
         String sql = "SELECT account_id, a.user_id, balance, is_primary FROM account AS a " +
                 " JOIN tenmo_user AS tu ON a.user_id = tu.user_id " +
                 " WHERE username = ?;";
 
-        SqlRowSet results = jdbcTemplate.queryForRowSet(sql, principal.getName());
+        SqlRowSet results = jdbcTemplate.queryForRowSet(sql, username);
         while (results.next()) {
             accountList.add(mapRowToAccount(results));
         }
         return accountList;
     }
 
-    public BigDecimal getAccountBalanceById(int userId){
-        BigDecimal balance = null;
-        String sql1 = "SELECT balance FROM account WHERE user_id = ?;";
-        SqlRowSet result = jdbcTemplate.queryForRowSet(sql1, userId);
-        if(result.next()) {
-            balance = result.getBigDecimal("balance");
-        }
-        System.out.println(balance);
-        return balance;
-    }
 
 
-    public boolean createAccount(Account newAccount, String name) {
+
+    public Account createAccount(Account newAccount, String name) {
         int userId = 0;
         int accountUserId = 0;
         int newAccId = 0;
@@ -97,20 +88,22 @@ public class JdbcAccountDao implements AccountDao{
                 newAccId = jdbcTemplate.queryForObject(sql, Integer.class, newAccount.getUser_id(), newAccount.getBalance(), newAccount.isIs_primary());
 
             } catch (CannotGetJdbcConnectionException e) {
-                return false;
+                System.out.println("Bad connection");
 
             } catch (BadSqlGrammarException e) {
-                return false;
+                System.out.println("SQL Grammar Error");
             } catch (DataIntegrityViolationException e) {
-                return false;
+                System.out.println("Data Integrity Violation");
 
             }
         } else {
             throw new RuntimeException("Please only input to your account");
         }
+        Account createdAccount = getAccount(newAccount.getUser_id());
+        return createdAccount;
 
-        return true;
     }
+
 
 
     public void transferTEBucks(Transaction transaction) {
@@ -118,8 +111,10 @@ public class JdbcAccountDao implements AccountDao{
         String sql2 = "INSERT INTO transactions(user_id, account_id, amount, target_id, status) VALUES (?, (SELECT account_id FROM account WHERE user_id = ? AND is_primary = ?), ?, ?, ?) RETURNING transaction_id;";
         try {
             jdbcTemplate.queryForObject(sql, Integer.class, transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount(), transaction.getTarget_id(), transaction.getStatus());
-            System.out.println(transaction.getTarget_id());
-            jdbcTemplate.queryForObject(sql2, Integer.class, transaction.getTarget_id(), transaction.getTarget_id(), true, transaction.getAmount(), transaction.getUser_id(), transaction.getStatus());
+
+
+            jdbcTemplate.queryForObject(sql2, Integer.class, transaction.getTarget_id(), getAccount(transaction.getTarget_id()).getAccount_id(), transaction.getAmount(), transaction.getUser_id(), transaction.getStatus());
+
 
 
             } catch (CannotGetJdbcConnectionException e) {
@@ -133,17 +128,19 @@ public class JdbcAccountDao implements AccountDao{
 
 
     @Override
-    public void addBal(int target_id, int account_id, BigDecimal amount) {
+    public int addBal(int target_id, int account_id, BigDecimal amount) {
         String sql = "UPDATE account SET balance = balance + ? " +
                 "WHERE user_id = ? AND account_id = ? AND is_primary = true;";
-        jdbcTemplate.update(sql, amount, target_id, account_id);
+        int numRows = jdbcTemplate.update(sql, amount, target_id, account_id);
+        return numRows;
     }
 
     @Override
-    public void decreaseBal(int user_id, int account_id, BigDecimal amount) {
+    public int decreaseBal(int user_id, int account_id, BigDecimal amount) {
         String sql = "UPDATE account SET balance =  balance - ? " +
                 "WHERE user_id = ? AND account_id = ? AND is_primary = true;";
-        jdbcTemplate.update(sql, amount, user_id, account_id);
+        int numRows = jdbcTemplate.update(sql, amount, user_id, account_id);
+        return numRows;
     }
 
 
