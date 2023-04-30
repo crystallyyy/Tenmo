@@ -21,6 +21,12 @@ public class Account {
         this.is_primary = is_primary;
     }
 
+    public Account(int user_id, BigDecimal balance, boolean is_primary){
+        this.user_id = user_id;
+        this.balance = balance;
+        this.is_primary = is_primary;
+    }
+
     public Account(){}
 
     public int getAccount_id() {

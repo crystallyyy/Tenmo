@@ -4,6 +4,7 @@ import com.techelevator.tenmo.dao.Account;
 import com.techelevator.tenmo.dao.AccountDao;
 import com.techelevator.tenmo.dao.TransactionDao;
 import com.techelevator.tenmo.dao.UserDao;
+import com.techelevator.tenmo.exception.TenmoException;
 import com.techelevator.tenmo.model.Transaction;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -33,7 +34,7 @@ public class AccountController {
 
     @RequestMapping(path = "/balance", method = RequestMethod.GET)
     public List<Account> getBalance(Principal principal) {
-        return accountDao.getAccounts(principal);
+        return accountDao.getAccounts(principal.getName());
 
     }
 
@@ -45,12 +46,9 @@ public class AccountController {
         if (transaction.getAmount().compareTo(ZERO) == 1 && accountDao.getAccount(transaction.getUser_id()).getBalance().compareTo(transaction.getAmount()) == 1) {
             accountDao.transferTEBucks(transaction);
             accountDao.decreaseBal(transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount());
-            //TODO: HOW do we get account ID for a target id
             accountDao.addBal(transaction.getTarget_id(), accountDao.getPrimaryAccount(transaction.getTarget_id()).getAccount_id(), transaction.getAmount());
         } else {
-            throw new RuntimeException("Amount must be greater than 0");
-
-
+            throw new TenmoException("Amount must be greater than 0");
         }
 
     }
@@ -63,7 +61,7 @@ public class AccountController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @RequestMapping(path = "/create", method = RequestMethod.POST)
-    public boolean create(@Valid @RequestBody Account account) {
+    public Account create(@Valid @RequestBody Account account) {
         return accountDao.createAccount(account);
     }
 }

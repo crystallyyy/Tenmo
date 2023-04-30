@@ -3,6 +3,7 @@ import com.techelevator.tenmo.dao.Account;
 import com.techelevator.tenmo.dao.AccountDao;
 import com.techelevator.tenmo.dao.TransactionDao;
 import com.techelevator.tenmo.dao.UserDao;
+import com.techelevator.tenmo.exception.TenmoException;
 import com.techelevator.tenmo.model.Transaction;
 import com.techelevator.tenmo.model.User;
 import org.springframework.http.HttpStatus;
@@ -50,7 +51,6 @@ public class TransactionController {
 
     @RequestMapping(path = "/transactions/pending", method = RequestMethod.GET)
     public List<Transaction> getPendingTransactions(Principal principal){
-        //TODO: do we need getPendingTransactions
         return transactionDao.getPendingTransactions(principal.getName());
     }
 
@@ -62,8 +62,18 @@ public class TransactionController {
 
     @RequestMapping(path = "/approverequest", method = RequestMethod.PUT)
     public void approveRequest(@RequestBody Transaction transaction, Principal principal){
-        transactionDao.approveRequest(transaction, principal.getName());
-        accountDao.decreaseBal(transaction.getTarget_id(), accountDao.getPrimaryAccount(transaction.getTarget_id()).getAccount_id(), transaction.getAmount());
+
+        if(transaction.getUser_id() != transaction.getTarget_id()) {
+            transactionDao.approveRequest(transaction, principal.getName());
+        } else{
+            throw new TenmoException("You are not authorized to approve this request.");
+        }
+
+        if(accountDao.getPrimaryAccount(transaction.getTarget_id()).getBalance().compareTo(transaction.getAmount()) != -1) {
+            accountDao.decreaseBal(transaction.getTarget_id(), accountDao.getPrimaryAccount(transaction.getTarget_id()).getAccount_id(), transaction.getAmount());
+        } else{
+            throw new TenmoException("Insufficient funds. Cannot complete transaction.");
+    }
         accountDao.addBal(transaction.getUser_id(), transaction.getAccount_id(), transaction.getAmount());
 
         //TODO: don't allow transaction to occur if insufficient funds for request
